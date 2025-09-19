@@ -1,0 +1,50 @@
+(base) silverlinings@SilverLinings MatrixFluid % '/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python' '/Users/silverlinings/esp/v5.5/esp-idf/tools/idf_monitor.py' -p /dev/tty.usbmodem133401 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --make ''/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python' '/Users/silv
+erlinings/esp/v5.5/esp-idf/tools/idf.py'' --target esp32s3 '/Users/silverlinings/Desktop/Coding/MatrixFluid/build/MatrixFluid.elf'
+--- Warning: Serial ports accessed as /dev/tty.* will hang gdb if launched.
+--- Using /dev/cu.usbmodem133401 instead...
+--- esp-idf-monitor 1.8.0 on /dev/cu.usbmodem133401 115200
+--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0x0 (DOWNLOAD(USB/UART0))
+Saved PC:0x40041a76
+--- 0x40041a76: ets_delay_us in ROM
+waiting for download
+--- Error: read failed: [Errno 6] Device not configured
+--- Waiting for the device to reconnect.
+I (1366) matrixfluid: Initializing remaining system components...
+E (1366) qmi8658: qmi8658_init(265): Failed to read device ID
+E (1366) matrixfluid: Accelerometer init failed: ESP_FAIL
+E (1366) fluid_sensors: fluid_sensors_read_raw(195): not initialized
+I (1376) fluid_sensors: Fluid monitoring task started
+I (1376) fluid_sensors: Fluid monitoring started
+I (1386) fluid_sensors: Fluid sensors initialized, initial level: SENSOR_ERROR
+I (1386) tap_detector: Tap detector initialized: threshold=1.5g, window=500ms
+I (1396) tap_detector: Triple-tap callback registered
+I (1396) matrixfluid: Tap callback registered
+I (1406) fluid_sensors: Fluid level callback registered
+I (1406) matrixfluid: Fluid callback registered
+I (1416) tap_detector: Auto tap detection task started
+E (1416) qmi8658: qmi8658_read_accel(304): not initialized
+W (1426) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE (error 1/10)
+E (1436) qmi8658: qmi8658_read_accel(304): not initialized
+W (1436) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE (error 2/10)
+I (1446) tap_detector: Auto tap detection started
+I (1446) matrixfluid: Tap detection started
+E (1456) qmi8658: qmi8658_read_accel(304): not initialized
+W (1456) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE (error 3/10)
+I (1466) matrixfluid: System initialization completed
+I (1466) matrixfluid: Initial fluid level: SENSOR_ERROR
+E (1476) qmi8658: qmi8658_read_accel(304): not initialized
+I (1476) matrixfluid: Fluid level changed: SENSOR_ERROR -> ABOVE_HALF
+I (1476) matrixfluid: Starting self-test...
+I (1486) fluid_sensors: Fluid level changed: SENSOR_ERROR -> ABOVE_HALF
+E (1496) qmi8658: qmi8658_read_accel(304): not initialized
+I (1496) neopixel: Brightness set to 10
+E (1516) qmi8658: qmi8658_read_accel(304): not initialized
+E (1536) qmi8658: qmi8658_read_accel(304): not initialized
+E (1556) qmi8658: qmi8658_read_accel(304): not initialized
+E (1576) qmi8658: qmi8658_read_accel(304): not initialized
+E (1596) qmi8658: qmi8658_read_accel(304): not initialized
+W (1596) tap_detector: Accelerometer failure persistent after 10 errors - tap detection disabled
+E (1616) qmi8658: qmi8658_read_accel(304): not initialized

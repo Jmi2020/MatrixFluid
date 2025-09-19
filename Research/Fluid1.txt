@@ -1,0 +1,138 @@
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0xc (RTC_SW_CPU_RST),boot:0x8 (SPI_FAST_FLASH_BOOT)
+Saved PC:0x40375b34
+--- 0x40375b34: esp_restart_noos at /Users/silverlinings/esp/v5.5/esp-idf/components/esp_system/port/soc/esp32s3/system_internal.c:162
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x159c
+load:0x403c8700,len:0xd24
+load:0x403cb700,len:0x2f48
+entry 0x403c8924
+I (24) boot: ESP-IDF v5.5-1-gb66b5448e0 2nd stage bootloader
+I (24) boot: compile time Sep 19 2025 02:03:11
+I (24) boot: Multicore bootloader
+I (25) boot: chip revision: v0.2
+I (28) boot: efuse block revision: v1.3
+I (32) boot.esp32s3: Boot SPI Speed : 80MHz
+I (35) boot.esp32s3: SPI Mode       : DIO
+I (39) boot.esp32s3: SPI Flash Size : 2MB
+I (43) boot: Enabling RNG early entropy source...
+I (47) boot: Partition Table:
+I (50) boot: ## Label            Usage          Type ST Offset   Length
+I (56) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (63) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (69) boot:  2 factory          factory app      00 00 00010000 00100000
+I (76) boot: End of partition table
+I (79) esp_image: segment 0: paddr=00010020 vaddr=3c020020 size=0c0b0h ( 49328) map
+I (95) esp_image: segment 1: paddr=0001c0d8 vaddr=3fc95400 size=02bcch ( 11212) load
+I (98) esp_image: segment 2: paddr=0001ecac vaddr=40374000 size=0136ch (  4972) load
+I (103) esp_image: segment 3: paddr=00020020 vaddr=42000020 size=1c34ch (115532) map
+I (129) esp_image: segment 4: paddr=0003c374 vaddr=4037536c size=10070h ( 65648) load
+I (144) esp_image: segment 5: paddr=0004c3ec vaddr=600fe000 size=00020h (    32) load
+I (151) boot: Loaded app from partition at offset 0x10000
+I (151) boot: Disabling RNG early entropy source...
+I (162) cpu_start: Multicore app
+I (171) cpu_start: Pro cpu start user code
+I (171) cpu_start: cpu freq: 160000000 Hz
+I (171) app_init: Application information:
+I (171) app_init: Project name:     MatrixFluid
+I (175) app_init: App version:      1b4d507-dirty
+I (180) app_init: Compile time:     Sep 19 2025 02:02:57
+I (185) app_init: ELF file SHA256:  a6b7d8951...
+I (189) app_init: ESP-IDF:          v5.5-1-gb66b5448e0
+I (194) efuse_init: Min chip rev:     v0.0
+I (198) efuse_init: Max chip rev:     v0.99 
+I (202) efuse_init: Chip rev:         v0.2
+I (206) heap_init: Initializing. RAM available for dynamic allocation:
+I (212) heap_init: At 3FC98C10 len 00050B00 (322 KiB): RAM
+I (217) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (222) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+I (227) heap_init: At 600FE020 len 00001FC8 (7 KiB): RTCRAM
+I (233) spi_flash: detected chip: generic
+I (236) spi_flash: flash io: dio
+W (239) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.
+W (251) i2c: This driver is an old driver, please migrate your application code to adapt `driver/i2c_master.h`
+I (261) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (268) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (274) main_task: Started on CPU0
+I (284) main_task: Calling app_main()
+I (284) matrixfluid: EMERGENCY: Clearing all LEDs for safety...
+I (284) led_matrix: EMERGENCY: Clearing LEDs immediately
+I (294) led_matrix: Sending emergency LED clear to hardware...
+I (294) led_matrix: Emergency LED clear successful
+I (304) led_matrix: LED matrix initialized: brightness=0, GPIO=14
+I (304) matrixfluid: Emergency LED clear completed
+
+=== MatrixFluid Vehicle Fluid Level Indicator ===
+Hardware: Waveshare ESP32-S3-Matrix
+Features: Triple-tap activation, 8x8 LED display, dual fluid sensors
+Safety: LED brightness limited to 15/255 (~15%)
+
+Chip: esp32s3 with 2 CPU core(s), revision v0.2
+Flash: 2 MB external
+Free heap: 374496 bytes
+Uptime: 10 ms
+
+Sensors:
+  Accelerometer: Disconnected
+  Fluid level: ABOVE_HALF
+  Total activations: 0
+
+I (344) matrixfluid: Starting MatrixFluid system...
+I (1354) matrixfluid: Initializing remaining system components...
+E (1354) qmi8658: qmi8658_init(204): Failed to read device ID
+E (1354) matrixfluid: Accelerometer init failed: ESP_FAIL
+E (1354) fluid_sensors: fluid_sensors_read_raw(195): not initialized
+I (1364) fluid_sensors: Fluid monitoring task started
+I (1364) fluid_sensors: Fluid monitoring started
+I (1374) fluid_sensors: Fluid sensors initialized, initial level: SENSOR_ERROR
+I (1374) tap_detector: Tap detector initialized: threshold=1.5g, window=500ms
+I (1384) tap_detector: Triple-tap callback registered
+I (1384) matrixfluid: Tap callback registered
+I (1394) fluid_sensors: Fluid level callback registered
+I (1394) matrixfluid: Fluid callback registered
+I (1404) tap_detector: Auto tap detection task started
+E (1404) qmi8658: qmi8658_read_accel(243): not initialized
+W (1414) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+I (1414) tap_detector: Auto tap detection started
+E (1424) qmi8658: qmi8658_read_accel(243): not initialized
+W (1424) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+I (1434) matrixfluid: Tap detection started
+I (1434) matrixfluid: System initialization completed
+E (1444) qmi8658: qmi8658_read_accel(243): not initialized
+W (1444) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+I (1454) matrixfluid: Initial fluid level: SENSOR_ERROR
+E (1464) qmi8658: qmi8658_read_accel(243): not initialized
+I (1464) matrixfluid: Fluid level changed: SENSOR_ERROR -> ABOVE_HALF
+W (1464) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+I (1474) fluid_sensors: Fluid level changed: SENSOR_ERROR -> ABOVE_HALF
+E (1484) qmi8658: qmi8658_read_accel(243): not initialized
+W (1494) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+I (1464) matrixfluid: Starting self-test...
+E (1504) qmi8658: qmi8658_read_accel(243): not initialized
+W (1504) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1524) qmi8658: qmi8658_read_accel(243): not initialized
+W (1524) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1544) qmi8658: qmi8658_read_accel(243): not initialized
+W (1544) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1564) qmi8658: qmi8658_read_accel(243): not initialized
+W (1564) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1584) qmi8658: qmi8658_read_accel(243): not initialized
+W (1584) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1604) qmi8658: qmi8658_read_accel(243): not initialized
+W (1604) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1624) qmi8658: qmi8658_read_accel(243): not initialized
+W (1624) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1644) qmi8658: qmi8658_read_accel(243): not initialized
+W (1644) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1664) qmi8658: qmi8658_read_accel(243): not initialized
+W (1664) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1684) qmi8658: qmi8658_read_accel(243): not initialized
+W (1684) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1704) qmi8658: qmi8658_read_accel(243): not initialized
+W (1704) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1724) qmi8658: qmi8658_read_accel(243): not initialized
+W (1724) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE
+E (1744) qmi8658: qmi8658_read_accel(243): not initialized
+W (1744) tap_detector: Failed to read accelerometer: ESP_ERR_INVALID_STATE

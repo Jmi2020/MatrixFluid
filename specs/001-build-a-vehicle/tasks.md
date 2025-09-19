@@ -42,31 +42,31 @@
 - **Build config**: `platformio.ini` at root
 
 ## Phase 3.1: Setup
-- [ ] T001 Create project directory structure per plan.md (src/, src/sensors/, src/display/, src/detection/, src/wireless/)
-- [ ] T002 Initialize PlatformIO project with platformio.ini for esp32-s3-devkitc-1 and Arduino framework
-- [ ] T003 Add library dependencies to platformio.ini (FastLED, QMI8658 sensor library)
-- [ ] T004 [P] Create src/config.h with system constants and safety limits (LED_BRIGHTNESS=40, DISPLAY_TIMEOUT_MS=7000)
-- [ ] T005 [P] Create README.md with project overview and safety warnings
+- [X] T001 Create project directory structure per plan.md (src/, src/sensors/, src/display/, src/detection/, src/wireless/)
+- [X] T002 Initialize PlatformIO project with platformio.ini for esp32-s3-devkitc-1 and Arduino framework
+- [X] T003 Add library dependencies to platformio.ini (FastLED, QMI8658 sensor library)
+- [X] T004 [P] Create src/config.h with system constants and safety limits (LED_BRIGHTNESS=40, DISPLAY_TIMEOUT_MS=7000)
+- [X] T005 [P] Create README.md with project overview and safety warnings
 
 ## Phase 3.2: Tests First (Hardware Simulation) ⚠️ MUST COMPLETE BEFORE 3.3
 **CRITICAL: These test stubs MUST be written before ANY implementation**
-- [ ] T006 [P] Create test/test_tap_detection.cpp with tap detector test cases (triple-tap, vibration rejection)
-- [ ] T007 [P] Create test/test_sensor_logic.cpp for fluid sensor state machine validation
-- [ ] T008 [P] Create test/test_led_patterns.cpp for LED icon rendering verification
-- [ ] T009 [P] Create test/test_http_api.cpp for Wi-Fi API endpoint tests (if ENABLE_WIFI)
-- [ ] T010 [P] Create test/test_ble_format.cpp for BLE advertisement format validation (if ENABLE_BLE)
+- [X] T006 [P] Create test/test_tap_detection.cpp with tap detector test cases (triple-tap, vibration rejection)
+- [X] T007 [P] Create test/test_sensor_logic.cpp for fluid sensor state machine validation
+- [X] T008 [P] Create test/test_led_patterns.cpp for LED icon rendering verification
+- [X] T009 [P] Create test/test_http_api.cpp for Wi-Fi API endpoint tests (if ENABLE_WIFI)
+- [X] T010 [P] Create test/test_ble_format.cpp for BLE advertisement format validation (if ENABLE_BLE)
 
 ## Phase 3.3: Core Implementation - Hardware Abstraction Layer
-- [ ] T011 [P] Implement src/sensors/fluid_sensors.h and .cpp with GPIO reading and debouncing
-- [ ] T012 [P] Implement src/sensors/accelerometer.h and .cpp with QMI8658 initialization and interrupt setup
-- [ ] T013 [P] Implement src/display/icons.h with 8x8 pixel patterns for checkmark, caution, stop, error
-- [ ] T014 [P] Implement src/display/led_controller.h and .cpp with FastLED matrix control and brightness limiting
+- [X] T011 [P] Implement src/sensors/fluid_sensors.h and .cpp with GPIO reading and debouncing
+- [X] T012 [P] Implement src/sensors/accelerometer.h and .cpp with QMI8658 initialization and interrupt setup
+- [X] T013 [P] Implement src/display/icons.h with 8x8 pixel patterns for checkmark, caution, stop, error
+- [X] T014 [P] Implement src/display/led_controller.h and .cpp with FastLED matrix control and brightness limiting
 
 ## Phase 3.4: Core Implementation - Business Logic
-- [ ] T015 Implement src/detection/tap_detector.h and .cpp with triple-tap state machine
-- [ ] T016 Create src/models.h with FluidLevel, DisplayState, TapEvent, SystemConfig structs
-- [ ] T017 Implement src/state_manager.cpp to coordinate sensor readings, display state, and timeouts
-- [ ] T018 Create src/main.cpp with setup() and loop() functions, system initialization
+- [X] T015 Implement src/detection/tap_detector.h and .cpp with triple-tap state machine
+- [X] T016 Create src/models.h with FluidLevel, DisplayState, TapEvent, SystemConfig structs
+- [X] T017 Implement src/state_manager.cpp to coordinate sensor readings, display state, and timeouts
+- [X] T018 Create src/main.cpp with setup() and loop() functions, system initialization
 
 ## Phase 3.5: Integration - Main Control Flow
 - [ ] T019 Integrate tap detector with accelerometer interrupts in main.cpp

@@ -1,0 +1,168 @@
+openapi: 3.0.0
+info:
+  title: Tank Monitor API
+  description: HTTP API for vehicle fluid level monitoring device
+  version: 1.0.0
+servers:
+  - url: http://192.168.4.1
+    description: ESP32 Access Point default IP
+
+paths:
+  /status:
+    get:
+      summary: Get current fluid level status
+      description: Returns the current fluid level and system state
+      responses:
+        '200':
+          description: Current system status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+              example:
+                fluid_level: "ABOVE_HALF"
+                display_active: false
+                last_activation: "2025-01-18T10:30:00Z"
+                uptime_seconds: 3600
+                total_activations: 42
+                temperature_celsius: 25
+                battery_voltage: 12.6
+
+  /config:
+    get:
+      summary: Get device configuration
+      description: Returns current device configuration parameters
+      responses:
+        '200':
+          description: Current configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+
+    post:
+      summary: Update device configuration
+      description: Modify device configuration parameters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Config'
+      responses:
+        '200':
+          description: Configuration updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: Invalid configuration values
+
+  /test:
+    post:
+      summary: Trigger display test
+      description: Manually activate the display for testing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pattern:
+                  type: string
+                  enum: [green, yellow, red, error, all]
+                duration_ms:
+                  type: integer
+                  minimum: 100
+                  maximum: 10000
+      responses:
+        '200':
+          description: Test initiated
+        '503':
+          description: Display already active
+
+  /stream:
+    get:
+      summary: WebSocket endpoint for real-time updates
+      description: Establishes WebSocket connection for streaming status
+      responses:
+        '101':
+          description: Switching Protocols to WebSocket
+          headers:
+            Upgrade:
+              schema:
+                type: string
+                example: websocket
+            Connection:
+              schema:
+                type: string
+                example: Upgrade
+
+components:
+  schemas:
+    Status:
+      type: object
+      required:
+        - fluid_level
+        - display_active
+        - uptime_seconds
+      properties:
+        fluid_level:
+          type: string
+          enum: [ABOVE_HALF, BELOW_HALF, NEAR_EMPTY, SENSOR_ERROR]
+          description: Current fluid level state
+        display_active:
+          type: boolean
+          description: Whether LED display is currently on
+        last_activation:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of last display activation
+        uptime_seconds:
+          type: integer
+          description: Seconds since device boot
+        total_activations:
+          type: integer
+          description: Total number of display activations
+        temperature_celsius:
+          type: number
+          description: Internal temperature sensor reading
+        battery_voltage:
+          type: number
+          description: Supply voltage if monitored
+
+    Config:
+      type: object
+      properties:
+        led_brightness:
+          type: integer
+          minimum: 1
+          maximum: 40
+          description: LED brightness (capped at 40/255)
+        display_timeout_ms:
+          type: integer
+          minimum: 1000
+          maximum: 30000
+          description: Display auto-off timeout in milliseconds
+        tap_threshold_g:
+          type: number
+          minimum: 0.5
+          maximum: 3.0
+          description: Acceleration threshold for tap detection
+        tap_window_ms:
+          type: integer
+          minimum: 100
+          maximum: 1000
+          description: Maximum time between taps
+        wifi_enabled:
+          type: boolean
+          description: Wi-Fi AP enable/disable
+        ble_enabled:
+          type: boolean
+          description: BLE advertising enable/disable

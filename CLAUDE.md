@@ -1,7 +1,7 @@
 # Claude Code Context: MatrixFluid
 
 ## Project Overview
-Vehicle fluid level indicator using Waveshare ESP32-S3-Matrix board with 8×8 RGB LED display and tap-gesture activation.
+Vehicle fluid level indicator using Waveshare ESP32-S3-Matrix board with 8×8 RGB LED display, timed wake cycles, and a built-in Wi-Fi configuration portal.
 
 ## Current Feature
 **Branch**: 001-build-a-vehicle
@@ -9,57 +9,59 @@ Vehicle fluid level indicator using Waveshare ESP32-S3-Matrix board with 8×8 RG
 
 ## Tech Stack
 - **Platform**: ESP32-S3 (Waveshare Matrix board)
-- **Language**: C/C++17 embedded
-- **Framework**: Arduino Core for ESP32
-- **Build System**: PlatformIO
+- **Language**: C (ESP-IDF components with FreeRTOS)
+- **Framework**: ESP-IDF 5.x
+- **Build System**: `idf.py` (CMake + Ninja)
 
 ## Key Libraries
-- FastLED (WS2812B LED control)
-- QMI8658 sensor library (accelerometer)
-- ESP32 WiFi (optional)
-- NimBLE-Arduino (optional BLE)
+- Custom WS2812B driver in `components/led_matrix` (RMT-based, brightness-capped)
+- Fluid sensor GPIO driver in `components/sensors`
+- ESP-IDF Wi-Fi softAP + HTTP server in `components/wifi_config`
+- Legacy gesture logic in `components/tap_detection` (deprecated)
 
 ## Hardware Constraints
-- LED brightness MAX 40/255 (safety limit)
+- LED brightness MAX 5/255 (safety limit)
 - GPIO14: LED matrix data pin
 - GPIO2/3: Fluid level sensors
-- GPIO8/9: I2C for accelerometer
+- Spare I2C pins available for future sensors (accelerometer no longer required)
+- USB Serial/JTAG host detection triggers demo mode when the device is on bench power
 - Power: 5V from vehicle via buck converter
 
 ## Project Structure
 ```
-src/
-├── main.cpp
-├── config.h
-├── sensors/
-│   ├── fluid_sensors.cpp
-│   └── accelerometer.cpp
-├── display/
-│   ├── led_controller.cpp
-│   └── icons.h
-├── detection/
-│   └── tap_detector.cpp
-└── wireless/ (optional)
+MatrixFluid/
+├── main/ (main.c entry point)
+├── components/
+│   ├── led_matrix/
+│   ├── display_controller/
+│   ├── sensors/
+│   ├── tap_detection/
+│   ├── wifi_config/
+│   └── demo_mode/
+├── docs/
+├── specs/
+└── Research/
 ```
 
 ## Critical Safety Rules
-1. NEVER exceed brightness 40/255
-2. Triple-tap activation only (no continuous display)
-3. Auto-shutoff after 7 seconds
+1. NEVER exceed brightness 5/255
+2. Status display must remain time-bound (default 7 seconds) with configurable wake interval
+3. Auto-shutoff after each cycle
 4. Default to caution on sensor errors
 
 ## Testing Commands
 ```bash
-pio run                  # Build
-pio run --target upload  # Flash
-pio device monitor      # Serial debug
+idf.py build                      # Compile
+idf.py -p /dev/cu.usbmodem* flash  # Flash
+idf.py -p /dev/cu.usbmodem* monitor # Serial debug
 ```
 
 ## Key Design Decisions
-- Framework: Arduino (simpler than ESP-IDF)
-- Tap threshold: 1.5g acceleration
-- Tap window: 150-500ms between taps
-- Display patterns: Green check, yellow triangle, red octagon
+- Framework: ESP-IDF for tighter control over safety-critical behavior
+- Scheduled wake interval managed in `display_controller`
+- Display patterns: Green check, yellow triangle, red octagon, error blink, demo set
+- Wi-Fi configuration portal enabled by default for field adjustments and manual refresh
+- Demo mode auto-detection uses USB host presence; portal exposes `/api/demo` for manual control and `/api/ota` for firmware uploads
 
 ## Recent Changes
 - Initial project setup
@@ -77,8 +79,8 @@ Ready for task generation (/tasks command)
 - **Language**: C/C++ embedded development
 - **Framework**: ESP-IDF (detected from CMakeLists.txt and hello_world_main.c)
 - **Build System**: CMake with ESP-IDF toolchain
-- **Hardware**: 8×8 RGB LED matrix (WS2812B), accelerometer (QMI8658), fluid sensors
-- **Real-time Constraints**: Safety-critical timing, gesture detection, auto-shutoff
+- **Hardware**: 8×8 RGB LED matrix (WS2812B), fluid sensors, optional legacy accelerometer
+- **Real-time Constraints**: Safety-critical timing, scheduled wake cycles, auto-shutoff
 
 ### AI Team Assignments
 
@@ -95,7 +97,7 @@ Ready for task generation (/tasks command)
 
 #### Hardware & Embedded Development
 - **Sensor Integration**: `@backend-developer` → Hardware abstraction, I2C communication, sensor calibration
-- **LED Matrix Control**: `@backend-developer` → FastLED library, brightness limiting, pattern generation
+- **LED Matrix Control**: `@backend-developer` → RMT driver in `components/led_matrix`, brightness limiting, pattern generation
 - **Real-time Systems**: `@backend-developer` → FreeRTOS tasks, interrupt handling, timing constraints
 - **GPIO Management**: `@backend-developer` → Pin configuration, signal processing, debouncing
 
@@ -126,27 +128,26 @@ Ready for task generation (/tasks command)
 
 #### Hardware Feature Development
 ```
-"Implement tap gesture detection using accelerometer"
-→ @tech-lead-orchestrator: Break down into sensor integration, filtering, and detection logic
-→ @backend-developer: Implement I2C communication and signal processing
-→ @performance-optimizer: Optimize response time and power consumption
-→ @code-reviewer: Validate safety and embedded best practices
+"Implement timed display scheduler"
+→ @tech-lead-orchestrator: Break down FreeRTOS timer needs and wake cadence
+→ @backend-developer: Implement interval logic inside display controller and integrate with sensors
+→ @performance-optimizer: Verify wake cycle power budget and latency
+→ @code-reviewer: Validate safety timeouts and watchdog coverage
 ```
 
 #### Safety-Critical Implementation
 ```
-"Add LED brightness safety limits"
-→ @backend-developer: Implement brightness capping and validation
-→ @code-reviewer: Verify fail-safe behaviors and edge cases
-→ @documentation-specialist: Document safety constraints and usage limits
+"Harden Wi-Fi portal configuration flow"
+→ @backend-developer: Refine AP bring-up and HTTP handlers
+→ @code-reviewer: Audit input validation and watchdog integration
+→ @documentation-specialist: Document field update procedures and safety notices
 ```
 
 #### System Integration
 ```
-"Integrate all sensors with LED display controller"
-→ @tech-lead-orchestrator: Plan integration architecture
-→ @code-archaeologist: Analyze current codebase structure
-→ @backend-developer: Implement integration layer
-→ @performance-optimizer: Optimize system performance
+"Coordinate sensor readings with scheduled display"
+→ @tech-lead-orchestrator: Plan sensor polling vs. display cadence
+→ @code-archaeologist: Analyze dependencies between sensors and display controller
+→ @backend-developer: Implement integration logic
+→ @performance-optimizer: Optimize timing jitter and CPU load
 ```
-

@@ -2,6 +2,8 @@
 
 **Feature**: 001-build-a-vehicle | **Date**: 2025-01-18
 
+> **Note:** BLE broadcasting remains optional. The current milestone prioritises timed display cycles and Wi-Fi portal refresh. This document captures the legacy advertisement format for future reference.
+
 ## Overview
 Bluetooth Low Energy advertisement format for broadcasting fluid level status without requiring connection.
 
@@ -26,8 +28,8 @@ Byte | Description           | Values
 4    | Display State        | 0x00=Off, 0x01=Active
 5    | Battery Level        | 0-100 (percentage), 0xFF=Not monitored
 6    | Temperature          | Signed int8 (Celsius), 0x80=Not available
-7    | Activation Count LSB | Lower byte of total activation count
-8    | Activation Count MSB | Upper byte of total activation count
+7    | Update Count LSB     | Lower byte of total update count
+8    | Update Count MSB     | Upper byte of total update count
 ```
 
 ### Service UUIDs (Optional)
@@ -64,7 +66,7 @@ Byte | Description           | Values
   - Display: 0x00 (Off)
   - Battery: 100%
   - Temperature: 25°C
-  - Activations: 42
+  - Updates: 42
 
 ## Scan Response Data (Optional)
 
@@ -96,7 +98,7 @@ struct BLEAdvData {
     uint8_t display_state;
     uint8_t battery_percent;
     int8_t temperature_c;
-    uint16_t activation_count;
+    uint16_t update_count;
 };
 
 void parseManufacturerData(uint8_t* data, uint8_t length) {
@@ -107,7 +109,7 @@ void parseManufacturerData(uint8_t* data, uint8_t length) {
         adv.display_state = data[4];
         adv.battery_percent = data[5];
         adv.temperature_c = (int8_t)data[6];
-        adv.activation_count = data[7] | (data[8] << 8);
+        adv.update_count = data[7] | (data[8] << 8);
     }
 }
 ```
@@ -132,4 +134,4 @@ void parseManufacturerData(uint8_t* data, uint8_t length) {
 2. Confirm data updates match actual sensor state
 3. Validate 10m range in typical environment
 4. Test battery impact (measure current during advertising)
-5. Ensure no interference with tap detection timing
+5. Ensure advertising has negligible impact on scheduled update timing

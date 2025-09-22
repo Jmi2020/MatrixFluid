@@ -16,61 +16,43 @@ enum class FluidLevel : uint8_t {
 };
 ```
 
-**Validation Rules**:
-- Sensor readings must be debounced for 100ms before state change
-- ERROR state triggered by impossible sensor combinations
-- State transitions logged for debugging
+**Validation Rules**
+- Sensor readings must be debounced (default 100 ms) before state change.
+- SENSOR_ERROR is emitted when sensors disagree or a read fails.
 
 ### DisplayState
 Represents the current display status of the LED matrix.
 
 ```cpp
 enum class DisplayState : uint8_t {
-    OFF = 0,              // Matrix powered off
-    SHOWING_GREEN = 1,    // Green checkmark displayed
-    SHOWING_YELLOW = 2,   // Yellow caution displayed
-    SHOWING_RED = 3,      // Red stop sign displayed
-    SHOWING_ERROR = 4,    // Blinking red X pattern
-    SELF_TEST = 5         // Startup test pattern
+    OFF = 0,
+    SHOWING_GREEN = 1,
+    SHOWING_YELLOW = 2,
+    SHOWING_RED = 3,
+    SHOWING_ERROR = 4,
+    SELF_TEST = 5
 };
 ```
 
-**State Transitions**:
-- OFF → SHOWING_* on triple-tap detection
-- SHOWING_* → OFF after timeout period
-- Any state → SHOWING_ERROR on critical failure
-- SELF_TEST → OFF after 2 seconds (startup only)
+**State Transitions**
+- OFF → SHOWING_* on scheduled wake or manual portal request.
+- SHOWING_* → OFF after configured timeout.
+- Any state → SHOWING_ERROR if a safety fault occurs.
+- SELF_TEST → OFF after startup diagnostics complete.
 
 ### ConnectionState
-Represents wireless connectivity status (optional feature).
+Represents Wi-Fi portal availability.
 
 ```cpp
 enum class ConnectionState : uint8_t {
-    DISABLED = 0,     // Wireless features compile-time disabled
-    IDLE = 1,         // Available but not broadcasting
-    WIFI_ACTIVE = 2,  // Wi-Fi AP running
-    BLE_ACTIVE = 3,   // BLE advertising
-    BOTH_ACTIVE = 4   // Wi-Fi and BLE both running
+    DISABLED = 0,
+    AP_IDLE = 1,
+    AP_ACTIVE = 2,
+    CLIENT_CONNECTED = 3
 };
 ```
 
 ## Core Structures
-
-### TapEvent
-Captures accelerometer tap detection data.
-
-```cpp
-struct TapEvent {
-    uint32_t timestamp_ms;  // millis() when detected
-    float magnitude_g;      // Peak acceleration in g
-    uint8_t axis_mask;     // Which axes triggered (bit flags)
-};
-```
-
-**Constraints**:
-- magnitude_g must be >= 1.5g to register
-- timestamp_ms rolls over at 49.7 days (handle wraparound)
-- axis_mask: bit 0=X, bit 1=Y, bit 2=Z
 
 ### SensorReading
 Raw sensor input data with timestamp.
@@ -78,40 +60,65 @@ Raw sensor input data with timestamp.
 ```cpp
 struct SensorReading {
     bool half_sensor;       // HIGH = fluid above half
-    bool empty_sensor;      // HIGH = fluid above empty
-    uint32_t timestamp_ms;  // Reading time
-    bool is_valid;         // False if read error
+    bool empty_sensor;      // HIGH = fluid above near-empty
+    uint32_t timestamp_ms;  // Reading timestamp
+    bool is_valid;          // False if read error
 };
 ```
 
-**Validation**:
-- Readings invalid if sensors disconnected
-- Timestamp must be monotonic (account for rollover)
-- Both sensors LOW = urgent state
+**Validation**
+- Readings marked invalid when GPIO read fails or sensor open-circuit detected.
+- Timestamp wraps at 49.7 days (handle rollover in comparisons).
+
+### ScheduleConfig
+Represents timing parameters for automatic wake cycles.
+
+```cpp
+struct ScheduleConfig {
+    uint32_t interval_ms;       // Period between automatic updates (default TBD)
+    uint32_t display_timeout_ms;// How long LEDs stay on (default 7000)
+    uint32_t startup_delay_ms;  // Delay before first cycle after boot
+};
+```
+
+**Constraints**
+- interval_ms minimum 60000 ms (1 minute) to avoid nuisance lighting [TBD].
+- display_timeout_ms must be between 1000 ms and 10000 ms.
+- startup_delay_ms defaults to the interval unless otherwise configured.
 
 ### SystemConfig
-Runtime configuration parameters.
+Runtime configuration parameters stored in flash.
 
 ```cpp
 struct SystemConfig {
-    uint8_t led_brightness;       // 0-40 (capped at ~15%)
-    uint16_t display_timeout_ms;  // Auto-off delay (default 7000)
-    float tap_threshold_g;        // Min acceleration (default 1.5)
-    uint16_t tap_window_ms;      // Max time between taps (default 500)
-    bool wifi_enabled;           // Compile-time flag
-    bool ble_enabled;            // Compile-time flag
-    uint16_t error_blink_ms;     // Error pattern period (default 500)
+    uint8_t led_brightness;        // 0-5 (capped for safety)
+    ScheduleConfig schedule;       // Timing parameters
+    bool wifi_enabled;             // Enable/disable AP portal
+    uint16_t error_blink_ms;       // Error pattern period (default 500)
 };
 ```
 
-**Constraints**:
-- led_brightness MUST NOT exceed 40 (hardware safety)
-- display_timeout_ms range: 1000-30000
-- tap_threshold_g range: 0.5-3.0
-- tap_window_ms range: 100-1000
+**Constraints**
+- led_brightness MUST NOT exceed 5.
+- wifi_enabled controls portal availability but does not disable scheduling.
+
+### PortalRequest
+Tracks manual refresh requests from Wi-Fi clients.
+
+```cpp
+struct PortalRequest {
+    bool pending;              // True when user requested refresh
+    uint32_t requested_ms;     // Timestamp of request
+    char client_ip[16];        // IPv4 text for logging
+};
+```
+
+**Notes**
+- pending cleared after request serviced or timeout reached.
+- requested_ms used to avoid duplicate triggers within debounce window (default 5 s).
 
 ### SystemState
-Complete system state snapshot.
+Complete system state snapshot for diagnostics.
 
 ```cpp
 struct SystemState {
@@ -119,106 +126,66 @@ struct SystemState {
     DisplayState display_state;
     ConnectionState connection_state;
     uint32_t uptime_ms;
-    uint32_t last_activation_ms;
-    uint32_t total_activations;
-    float battery_voltage;  // If monitoring power
-    int8_t temperature_c;   // From internal sensor
+    uint32_t last_update_ms;
+    uint32_t next_wake_ms;
+    uint32_t total_updates;
+    PortalRequest portal;
+    float battery_voltage;     // Optional power monitoring
+    int8_t temperature_c;      // Optional thermal monitoring
 };
 ```
 
-**Persistence**:
-- total_activations saved to EEPROM every 100 activations
-- Other fields volatile (reset on power cycle)
-
-### TapDetector
-Internal state machine for triple-tap detection.
-
-```cpp
-struct TapDetector {
-    TapEvent tap_buffer[3];     // Circular buffer
-    uint8_t tap_count;          // Current count in window
-    uint32_t window_start_ms;   // First tap timestamp
-    bool detection_armed;       // Ready to detect
-    uint32_t last_detection_ms; // Debounce timer
-};
-```
-
-**Algorithm**:
-1. On tap event, add to buffer
-2. If 3 taps within window → trigger activation
-3. Reset if window expires or activation triggered
-4. Ignore taps for 1000ms post-activation (debounce)
+**Persistence**
+- total_updates can be periodically stored to NVS/flash for field diagnostics.
+- Portal request log may be persisted if telemetry is required.
 
 ## Data Flow
 
 ### Sensor → State
 ```
-Physical Sensors → SensorReading → Debounce → FluidLevel
+Fluid sensors → SensorReading → Debounce/validation → FluidLevel → SystemState
 ```
 
-### Tap → Display
+### Scheduler → Display
 ```
-Accelerometer → TapEvent → TapDetector → Display Activation → DisplayState
-```
-
-### State → Output
-```
-FluidLevel + DisplayState → LED Matrix Pattern → Physical LEDs
+ScheduleConfig + SystemState → Scheduler task → Display controller → DisplayState → LED matrix
 ```
 
-### Wireless Broadcasting (Optional)
+### Portal Request → Display
 ```
-SystemState → JSON/BLE Format → Wi-Fi HTTP/BLE Advertisement
+HTTP POST /refresh → PortalRequest.pending → Scheduler immediate cycle → DisplayState
 ```
 
-## Memory Layout
-
-### EEPROM/Flash Storage
+### State → Wi-Fi Portal
 ```
-Address  | Data              | Size
----------|-------------------|------
-0x00     | Magic byte (0xAF) | 1
-0x01     | Config version    | 1
-0x02-0x05| Total activations | 4
-0x06-0x15| SystemConfig      | 16
-0x16-0x1F| Reserved          | 10
+SystemState → JSON/render template → HTTP response to client
+```
+
+## Memory Layout (Draft)
+
+### NVS/Flash Storage Suggestions
+```
+Key           | Data              | Notes
+--------------|-------------------|------------------------------
+config/led    | uint8_t           | brightness (0-5)
+config/sched  | ScheduleConfig    | interval + timeout
+stats/updates | uint32_t          | total update count
 ```
 
 ### RAM Usage Estimates
-- SystemState: 24 bytes
-- TapDetector: 48 bytes
-- SensorReading buffer[10]: 80 bytes
+- SystemState: ~48 bytes
+- Sensor history buffer[10]: ~80 bytes
 - LED frame buffer: 192 bytes (64 LEDs × 3 bytes)
-- Total core: ~350 bytes
+- Wi-Fi portal scratch: configurable (1-2 KB)
 
 ## Thread Safety
 
 ### Shared Resources
-- SystemState: Protected by mutex/critical section
-- LED frame buffer: Double-buffered for clean updates
-- Sensor readings: Atomic operations or ISR-safe
+- SystemState protected by mutex or critical section when accessed from scheduler and portal tasks.
+- LED frame buffer updated via double-buffer pattern before pushing to RMT driver.
+- PortalRequest updated from HTTP handler; scheduler must clear using atomic or guarded operations.
 
-### Task Priorities (FreeRTOS)
-1. Accelerometer ISR: Highest
-2. Sensor reading task: High
-3. Display update task: Normal
-4. Wi-Fi/BLE task: Low
-5. Idle task: Lowest
+### Timing Guarantees
+- Scheduler task should run at low priority but with deterministic wake using esp_timer or FreeRTOS timer.
+- Manual portal refresh should enqueue request and return quickly to avoid blocking HTTP handler.
 
-## Validation Rules
-
-### State Consistency
-- FluidLevel must match sensor logic table
-- DisplayState timeout must be enforced
-- Connection state must reflect actual radio status
-
-### Boundary Conditions
-- Handle millis() rollover at 49.7 days
-- Cap brightness even if config corrupted
-- Default to safe states on any error
-
-### Error Recovery
-- Sensor error → Show caution (yellow) or error pattern
-- Config corruption → Load safe defaults
-- Accelerometer failure → Disable tap detection, show error
-- Memory full → Stop logging, continue operation

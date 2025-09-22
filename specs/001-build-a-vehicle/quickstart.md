@@ -12,9 +12,9 @@
 - Mounting hardware (velcro/brackets)
 
 ### Software Required
-- PlatformIO (VS Code extension recommended)
+- ESP-IDF v5.x toolchain (`idf.py` available in your shell)
 - USB-C cable for programming
-- Serial terminal (built into PlatformIO)
+- Serial terminal (`idf.py monitor` or equivalent)
 
 ## Hardware Setup
 
@@ -63,34 +63,43 @@ cd MatrixFluid
 ```
 
 ### Step 2: Install Dependencies
+Set up the ESP-IDF environment following Espressif's guide. Typical steps:
 ```bash
-# Install PlatformIO Core (if not using VS Code)
-pip install platformio
-
-# Or use VS Code with PlatformIO extension
+python -m pip install --upgrade esptool
+git clone --recursive https://github.com/espressif/esp-idf.git $HOME/esp/esp-idf
+$HOME/esp/esp-idf/install.sh esp32s3
+source $HOME/esp/esp-idf/export.sh  # Run in every new shell
 ```
 
 ### Step 3: Configure Settings (Optional)
-Edit `src/config.h` if needed:
-```cpp
-// Adjust these values if needed
-#define DISPLAY_TIMEOUT_MS 7000    // 7 seconds
-#define TAP_THRESHOLD_G 1.5        // 1.5g acceleration
-#define LED_BRIGHTNESS 40          // Max 40/255 (~15%)
-#define ENABLE_WIFI false          // Set true for Wi-Fi
-#define ENABLE_BLE false           // Set true for BLE
+Tune component headers as required:
+```c
+// components/led_matrix/include/led_matrix.h
+#define LED_MAX_BRIGHTNESS      5   // Proven safe limit (~2% duty cycle)
+#define LED_DEFAULT_BRIGHTNESS  3   // Boot brightness
+
+// components/display_controller/include/display_controller.h
+#define DISPLAY_UPDATE_INTERVAL_MINUTES 15   // Scheduled wake cadence
+#define DISPLAY_TIMEOUT_MS              7000 // LEDs on-time per cycle
+
+// components/wifi_config/include/wifi_config.h
+#define WIFI_AP_SSID     "MatrixFluid-Config"
+#define WIFI_AP_PASSWORD "fluid123"
 ```
 
 ### Step 4: Build and Upload
 ```bash
-# Build the project
-pio run
+# Select target once per checkout
+idf.py set-target esp32s3
 
-# Upload to board (connect USB-C first)
-pio run --target upload
+# Build the firmware
+idf.py build
 
-# Monitor serial output
-pio device monitor
+# Flash (adjust port as needed)
+idf.py -p /dev/cu.usbmodem* flash
+
+# Monitor serial output (115200 baud)
+idf.py -p /dev/cu.usbmodem* monitor
 ```
 
 ## Initial Testing
@@ -110,29 +119,35 @@ Simulate fluid levels using jumper wires:
 | Tank Half | Connected to GND | Open | Yellow caution |
 | Tank Empty | Connected to GND | Connected to GND | Red stop sign |
 
-### 3. Tap Detection Test
-1. Hold the board steady
-2. Tap firmly three times in quick succession
-3. Display should activate showing current fluid level
-4. Display auto-offs after 7 seconds
+### 3. Scheduler Test
+1. Allow the device to idle until the configured interval elapses (default 15 minutes).
+2. Confirm the display activates automatically and shows the correct icon.
+3. Verify the display turns off after the timeout and logs an entry in the serial monitor.
 
-### 4. Serial Debug
+### 4. Wi-Fi Portal Test
+1. Connect a phone or laptop to the `MatrixFluid-Config` network.
+2. Browse to http://192.168.4.1 and press the manual refresh button.
+3. Confirm the display activates immediately and the portal response matches the LED status.
+
+### 5. Serial Debug
 Monitor serial output at 115200 baud:
 ```
 [BOOT] MatrixFluid v1.0.0
 [INIT] LED Matrix: OK
-[INIT] Accelerometer: OK
 [INIT] Sensors: OK
-[TAP] Detected triple-tap!
+[INIT] Scheduler: interval=15m timeout=7s
+[INIT] Wi-Fi AP: MatrixFluid-Config
+[SCHED] Interval elapsed -> refreshing status
 [DISPLAY] Showing: ABOVE_HALF
 [DISPLAY] Auto-off after timeout
+[PORTAL] Manual refresh served to 192.168.4.2
 ```
 
 ## Vehicle Installation
 
 ### Mounting Location
 - Choose vibration-dampened location
-- Ensure easy reach for tapping
+- Keep device visible to the driver without glare
 - Keep away from heat sources
 - Protect from moisture
 
@@ -152,30 +167,26 @@ Monitor serial output at 115200 baud:
 ## Operation
 
 ### Normal Use
-1. Triple-tap the device to check fluid level
-2. Observe the displayed icon:
+1. The device wakes on a schedule (default every 15 minutes) and shows the latest status automatically.
+2. Connect to the `MatrixFluid-Config` Wi-Fi network and open http://192.168.4.1 to trigger an immediate refresh when needed.
+3. Observe the displayed icon:
    - 🟢 Green checkmark = Good (above half)
    - 🟡 Yellow triangle = Caution (below half)
    - 🔴 Red octagon = Low (near empty)
    - ❌ Blinking red X = Sensor error
-3. Display turns off automatically after 7 seconds
+4. The display turns off automatically after the configured timeout (default 7 seconds).
 
 ### Wi-Fi Access (If Enabled)
-1. After activation, connect to "TankMonitor" Wi-Fi
-2. Open browser to http://192.168.4.1
-3. View detailed status and history
-
-### BLE Monitoring (If Enabled)
-1. Use any BLE scanner app
-2. Look for "TankMon" device
-3. View advertised data (no pairing needed)
+1. Connect to the `MatrixFluid-Config` Wi-Fi network (default password `fluid123`).
+2. Open a browser to http://192.168.4.1.
+3. View status history, trigger a manual refresh, or adjust timing/brightness if those controls are exposed.
 
 ## Troubleshooting
 
-### No Display on Triple-Tap
-- Check serial monitor for tap detection
-- Adjust TAP_THRESHOLD_G if too sensitive/insensitive
-- Ensure accelerometer is initialized
+### No Scheduled Display Cycle
+- Check serial monitor for scheduler logs (`[SCHED]` entries)
+- Review interval and timeout definitions in `components/display_controller/include/display_controller.h`
+- Trigger a manual refresh via the Wi-Fi portal to verify LEDs and sensors
 
 ### Wrong Fluid Level Shown
 - Verify sensor wiring (use multimeter)
@@ -183,9 +194,9 @@ Monitor serial output at 115200 baud:
 - Ensure sensors mounted at correct levels
 
 ### Display Too Bright/Dim
-- Adjust LED_BRIGHTNESS in config.h
-- Maximum safe value is 40 (out of 255)
-- Recompile and upload after changes
+- Update `LED_DEFAULT_BRIGHTNESS` in `components/led_matrix/include/led_matrix.h`
+- Respect the enforced `LED_MAX_BRIGHTNESS` of 5 (out of 255)
+- Rebuild and flash after changes
 
 ### Device Resets/Crashes
 - Check power supply stability
@@ -207,13 +218,14 @@ Monitor serial output at 115200 baud:
 git pull
 
 # Rebuild and upload
-pio run --target upload
+idf.py build
+idf.py -p /dev/cu.usbmodem* flash
 ```
 
 ## Safety Notes
 
 ⚠️ **Important Safety Information**:
-- Never exceed 40/255 LED brightness (overheating risk)
+- Never exceed 5/255 LED brightness (overheating risk)
 - Ensure proper ventilation around device
 - Use fused power connection in vehicle
 - Do not operate while driving

@@ -26,7 +26,7 @@ extern "C" {
 #define LED_DEFAULT_BRIGHTNESS  3       ///< Default brightness (proven safe level)
 
 /**
- * @brief Display patterns for different fluid levels
+ * @brief Display patterns for different fluid levels and demo modes
  */
 typedef enum {
     PATTERN_OFF = 0,        ///< All LEDs off
@@ -34,7 +34,13 @@ typedef enum {
     PATTERN_YELLOW_WARN,    ///< Yellow warning triangle (low fluid)
     PATTERN_RED_STOP,       ///< Red stop sign (critical level)
     PATTERN_ERROR_BLINK,    ///< Blinking red X (sensor error)
-    PATTERN_SELF_TEST       ///< Self-test pattern (startup)
+    PATTERN_SELF_TEST,      ///< Self-test pattern (startup)
+    // Demo mode patterns
+    PATTERN_DEMO_USB,       ///< Demo mode indicator (USB power)
+    PATTERN_DEMO_PINS,      ///< Pin assignment display
+    PATTERN_DEMO_FLUID_OK,  ///< Demo: fluid OK animation
+    PATTERN_DEMO_FLUID_LOW, ///< Demo: fluid low animation
+    PATTERN_DEMO_FLUID_CRITICAL ///< Demo: fluid critical animation
 } led_pattern_t;
 
 /**
@@ -122,6 +128,22 @@ uint8_t led_matrix_get_brightness(void);
  * @return esp_err_t ESP_OK on success
  */
 esp_err_t led_matrix_deinit(void);
+
+/**
+ * @brief Start demo mode animation sequence
+ *
+ * Cycles through demo patterns showing pin assignments and fluid states
+ *
+ * @return esp_err_t ESP_OK on success
+ */
+esp_err_t led_matrix_start_demo_mode(void);
+
+/**
+ * @brief Stop demo mode and clear display
+ *
+ * @return esp_err_t ESP_OK on success
+ */
+esp_err_t led_matrix_stop_demo_mode(void);
 
 #ifdef __cplusplus
 }

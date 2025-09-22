@@ -41,8 +41,8 @@ typedef enum {
  * @brief Raw sensor reading structure
  */
 typedef struct {
-    bool half_sensor;       ///< Half-full sensor state (HIGH = fluid above)
-    bool empty_sensor;      ///< Near-empty sensor state (HIGH = fluid above)
+    bool half_sensor;       ///< Half-full sensor state (true = float submerged)
+    bool empty_sensor;      ///< Near-empty sensor state (true = float submerged)
     uint32_t timestamp_ms;  ///< Reading timestamp
     bool is_valid;          ///< Reading validity flag
 } fluid_reading_t;

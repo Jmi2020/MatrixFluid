@@ -3,18 +3,18 @@
  * @brief MatrixFluid - Vehicle Fluid Level Indicator Main Application
  *
  * ESP32-S3 based vehicle fluid level indicator with 8x8 RGB LED matrix display.
- * Features triple-tap gesture activation, two-level fluid sensing, and safety-limited brightness.
+ * Features timed status cycles, two-level fluid sensing, Wi-Fi portal refresh, and safety-limited brightness.
  *
  * Hardware:
  * - Waveshare ESP32-S3-Matrix board
  * - 8x8 WS2812B LED matrix (GPIO14)
- * - QMI8658 accelerometer (I2C: SDA=GPIO8, SCL=GPIO9)
  * - Fluid sensors (GPIO2=half-full, GPIO3=near-empty)
+ * - Onboard QMI8658 accelerometer (unused; demo mode uses USB host detection)
  *
  * Safety:
- * - LED brightness capped at 40/255 (~15%) to prevent overheating
- * - Triple-tap activation only (7-second auto-shutoff)
- * - Vehicle vibration filtering
+ * - LED brightness capped at 5/255 (~2%) to prevent overheating
+ * - Timed activation cycle with 7-second auto-shutoff
+ * - Optional manual refresh via Wi-Fi portal
  * - Default to caution on sensor errors
  */
 
@@ -27,6 +27,7 @@
 #include "esp_system.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
+#include "esp_timer.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -35,8 +36,9 @@
 // Component includes
 #include "led_matrix.h"
 #include "fluid_sensors.h"
-#include "qmi8658_accel.h"
-#include "tap_detector.h"
+#include "display_controller.h"
+#include "wifi_config.h"
+#include "demo_mode.h"
 
 static const char *TAG = "matrixfluid";
 
@@ -49,8 +51,9 @@ static const char *TAG = "matrixfluid";
 typedef enum {
     SYSTEM_STATE_INITIALIZING = 0,
     SYSTEM_STATE_SELF_TEST,
-    SYSTEM_STATE_IDLE,
-    SYSTEM_STATE_DISPLAYING,
+    SYSTEM_STATE_WIFI_SETUP,
+    SYSTEM_STATE_RUNNING,
+    SYSTEM_STATE_DEMO_MODE,
     SYSTEM_STATE_ERROR
 } system_state_t;
 
@@ -58,102 +61,30 @@ typedef enum {
 static struct {
     system_state_t state;
     fluid_level_t current_fluid_level;
-    bool display_active;
-    TimerHandle_t display_timer;
-    uint32_t total_activations;
+    fluid_level_t previous_fluid_level;
     uint32_t startup_time_ms;
+    bool wifi_enabled;
+    bool demo_mode_enabled;
+    uint32_t last_demo_check;
+    uint32_t total_web_triggers;
+    bool auto_demo_requested;
 } g_system = {0};
 
 // Forward declarations
-static void display_timeout_callback(TimerHandle_t timer);
-static void triple_tap_detected_callback(const tap_event_t tap_events[3], void *user_ctx);
 static void fluid_level_changed_callback(fluid_level_t new_level, fluid_level_t old_level, void *user_ctx);
+static void display_event_callback(trigger_source_t source, fluid_level_t fluid_level, void *user_ctx);
 
 /**
- * @brief Convert fluid level to LED pattern
+ * @brief Display event callback from display controller
  */
-static led_pattern_t fluid_level_to_pattern(fluid_level_t level) {
-    switch (level) {
-        case FLUID_LEVEL_ABOVE_HALF:  return PATTERN_GREEN_CHECK;
-        case FLUID_LEVEL_BELOW_HALF:  return PATTERN_YELLOW_WARN;
-        case FLUID_LEVEL_NEAR_EMPTY:  return PATTERN_RED_STOP;
-        case FLUID_LEVEL_SENSOR_ERROR:
-        default:                      return PATTERN_ERROR_BLINK;
-    }
-}
+static void display_event_callback(trigger_source_t source, fluid_level_t fluid_level, void *user_ctx) {
+    ESP_LOGI(TAG, "Display activated: source=%s, level=%s",
+             display_controller_trigger_to_string(source),
+             fluid_level_to_string(fluid_level));
 
-/**
- * @brief Display current fluid level on LED matrix
- */
-static esp_err_t display_fluid_level(void) {
-    led_pattern_t pattern = fluid_level_to_pattern(g_system.current_fluid_level);
-
-    ESP_LOGI(TAG, "Displaying fluid level: %s (pattern: %d)",
-             fluid_level_to_string(g_system.current_fluid_level), pattern);
-
-    esp_err_t ret = led_matrix_show_pattern(pattern, LED_DEFAULT_BRIGHTNESS);
-    if (ret == ESP_OK) {
-        g_system.display_active = true;
-        g_system.state = SYSTEM_STATE_DISPLAYING;
-
-        // Start display timeout timer
-        if (g_system.display_timer) {
-            xTimerStart(g_system.display_timer, pdMS_TO_TICKS(100));
-        }
-
-        g_system.total_activations++;
-    }
-
-    return ret;
-}
-
-/**
- * @brief Turn off display and return to idle state
- */
-static esp_err_t turn_off_display(void) {
-    ESP_LOGI(TAG, "Turning off display");
-
-    esp_err_t ret = led_matrix_clear();
-    if (ret == ESP_OK) {
-        g_system.display_active = false;
-        g_system.state = SYSTEM_STATE_IDLE;
-
-        // Stop display timeout timer
-        if (g_system.display_timer) {
-            xTimerStop(g_system.display_timer, pdMS_TO_TICKS(100));
-        }
-    }
-
-    return ret;
-}
-
-/**
- * @brief Display timeout callback - turns off display after timeout
- */
-static void display_timeout_callback(TimerHandle_t timer) {
-    ESP_LOGI(TAG, "Display timeout reached");
-    turn_off_display();
-}
-
-/**
- * @brief Triple-tap detection callback
- */
-static void triple_tap_detected_callback(const tap_event_t tap_events[3], void *user_ctx) {
-    ESP_LOGI(TAG, "Triple-tap detected! Tap magnitudes: %.2fg, %.2fg, %.2fg",
-             tap_events[0].magnitude_g, tap_events[1].magnitude_g, tap_events[2].magnitude_g);
-
-    if (g_system.state == SYSTEM_STATE_IDLE) {
-        // Display current fluid level
-        esp_err_t ret = display_fluid_level();
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to display fluid level: %s", esp_err_to_name(ret));
-        }
-    } else if (g_system.state == SYSTEM_STATE_DISPLAYING) {
-        // Reset display timeout
-        if (g_system.display_timer) {
-            xTimerReset(g_system.display_timer, pdMS_TO_TICKS(100));
-        }
-        ESP_LOGI(TAG, "Display timeout reset");
+    // Update statistics
+    if (source == TRIGGER_SOURCE_MANUAL) {
+        g_system.total_web_triggers++;
     }
 }
 
@@ -164,15 +95,11 @@ static void fluid_level_changed_callback(fluid_level_t new_level, fluid_level_t 
     ESP_LOGI(TAG, "Fluid level changed: %s -> %s",
              fluid_level_to_string(old_level), fluid_level_to_string(new_level));
 
+    g_system.previous_fluid_level = old_level;
     g_system.current_fluid_level = new_level;
 
-    // If display is currently active, update it immediately
-    if (g_system.display_active) {
-        esp_err_t ret = led_matrix_show_pattern(fluid_level_to_pattern(new_level), LED_DEFAULT_BRIGHTNESS);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to update display: %s", esp_err_to_name(ret));
-        }
-    }
+    // Notify display controller
+    display_controller_update_fluid_level(new_level, old_level);
 
     // Log critical fluid level
     if (new_level == FLUID_LEVEL_NEAR_EMPTY) {
@@ -196,18 +123,15 @@ static esp_err_t perform_self_test(void) {
     // Wait for self-test duration
     vTaskDelay(pdMS_TO_TICKS(SELF_TEST_DURATION_MS));
 
-    // Test accelerometer
-    ret = qmi8658_self_test();
-    if (ret != ESP_OK) {
-        ESP_LOGW(TAG, "Accelerometer self-test failed: %s", esp_err_to_name(ret));
-        // Continue anyway - not critical
-    }
+    // Test fluid sensors
+    fluid_level_t test_level = fluid_sensors_get_level();
+    ESP_LOGI(TAG, "Fluid sensor test: %s", fluid_level_to_string(test_level));
 
-    // Clear display and return to idle
+    // Clear display and proceed to WiFi setup
     ret = led_matrix_clear();
     ESP_RETURN_ON_ERROR(ret, TAG, "Failed to clear display after self-test");
 
-    g_system.state = SYSTEM_STATE_IDLE;
+    g_system.state = SYSTEM_STATE_WIFI_SETUP;
     ESP_LOGI(TAG, "Self-test completed");
 
     return ESP_OK;
@@ -221,7 +145,7 @@ static void print_system_info(void) {
     printf("\n");
     printf("=== MatrixFluid Vehicle Fluid Level Indicator ===\n");
     printf("Hardware: Waveshare ESP32-S3-Matrix\n");
-    printf("Features: Triple-tap activation, 8x8 LED display, dual fluid sensors\n");
+    printf("Features: Timed updates, 8x8 LED display, dual fluid sensors, Wi-Fi portal\n");
     printf("Safety: LED brightness limited to %d/255 (~2%%)\n", LED_MAX_BRIGHTNESS);
     printf("\n");
 
@@ -245,10 +169,84 @@ static void print_system_info(void) {
 
     // Print sensor status
     printf("Sensors:\n");
-    printf("  Accelerometer: %s\n", qmi8658_is_connected() ? "Connected" : "Disconnected");
     printf("  Fluid level: %s\n", fluid_level_to_string(g_system.current_fluid_level));
-    printf("  Total activations: %lu\n", g_system.total_activations);
+    printf("  Web triggers: %lu\n", g_system.total_web_triggers);
     printf("\n");
+
+    // Print control options
+    printf("Control Options:\n");
+    printf("  WiFi Network: %s (Password: %s)\n", WIFI_AP_SSID, WIFI_AP_PASSWORD);
+    printf("  Web Interface: http://192.168.4.1/\n");
+    printf("  - Manual display trigger\n");
+    printf("  - Configurable automatic timing\n");
+    printf("  - Brightness control\n");
+    printf("\n");
+
+    // Print pin assignments
+    printf("Pin Assignments:\n");
+    printf("  GPIO2: Fluid sensor 1 (half-full)\n");
+    printf("  GPIO3: Fluid sensor 2 (near-empty)\n");
+    printf("  GPIO14: LED matrix data\n");
+    printf("  5V/GND: Power (5V buck converter recommended)\n");
+    printf("\n");
+}
+
+static void publish_portal_status_snapshot(void) {
+    if (!g_system.wifi_enabled) {
+        return;
+    }
+
+    display_stats_t display_stats;
+    display_controller_get_stats(&display_stats);
+
+    fluid_reading_t raw_reading = {0};
+    bool raw_valid = (fluid_sensors_read_raw(&raw_reading) == ESP_OK);
+
+    wifi_portal_status_t status = {0};
+    status.fluid_level = g_system.current_fluid_level;
+    status.displayed_fluid_level = display_controller_get_current_level();
+    if (raw_valid) {
+        status.half_sensor_submerged = raw_reading.half_sensor;
+        status.empty_sensor_submerged = raw_reading.empty_sensor;
+        status.half_sensor_signal_high = !raw_reading.half_sensor;
+        status.empty_sensor_signal_high = !raw_reading.empty_sensor;
+    }
+    status.display_active = display_controller_is_active();
+    status.uptime_seconds = (uint32_t)(esp_timer_get_time() / 1000000ULL);
+    status.total_display_count = display_stats.total_displays;
+    status.manual_trigger_count = display_stats.manual_triggers;
+    status.periodic_trigger_count = display_stats.periodic_triggers;
+    status.demo_mode_active = g_system.demo_mode_enabled;
+    status.demo_mode_requested = wifi_config_demo_mode_requested();
+    status.auto_demo_requested = g_system.auto_demo_requested;
+    status.power_source = demo_mode_get_power_source();
+
+    display_config_t portal_config;
+    if (wifi_config_get_display_config(&portal_config) == ESP_OK) {
+        status.display_config = portal_config;
+
+        if (portal_config.periodic_display_enabled && portal_config.display_interval_seconds > 0) {
+            const uint64_t now_ms = esp_timer_get_time() / 1000ULL;
+            const uint64_t interval_ms = (uint64_t)portal_config.display_interval_seconds * 1000ULL;
+            uint32_t next_wake_seconds = portal_config.display_interval_seconds;
+
+            if (display_stats.last_display_time > 0 && interval_ms > 0) {
+                uint64_t last_ms = display_stats.last_display_time;
+                if (now_ms >= last_ms) {
+                    uint64_t elapsed_ms = now_ms - last_ms;
+                    if (elapsed_ms < interval_ms) {
+                        next_wake_seconds = (uint32_t)((interval_ms - elapsed_ms + 999ULL) / 1000ULL);
+                    } else {
+                        next_wake_seconds = 0;
+                    }
+                }
+            }
+
+            status.next_wake_seconds = next_wake_seconds;
+        }
+    }
+
+    wifi_config_update_status(&status);
 }
 
 /**
@@ -260,14 +258,32 @@ static void system_monitor_task(void *pvParameters) {
 
     while (1) {
         // Print periodic status
-        tap_stats_t tap_stats;
-        if (tap_detector_get_stats(&tap_stats) == ESP_OK) {
-            ESP_LOGI(TAG, "Status: State=%d, Fluid=%s, Taps=%lu, Detections=%lu, Errors=%lu",
-                     g_system.state,
-                     fluid_level_to_string(g_system.current_fluid_level),
-                     tap_stats.total_taps,
-                     tap_stats.triple_tap_count,
-                     fluid_sensors_get_error_count());
+        const char* state_names[] = {
+            "INIT", "SELF_TEST", "WIFI_SETUP", "RUNNING", "DEMO", "ERROR"
+        };
+        const char* state_name = (g_system.state < 6) ? state_names[g_system.state] : "UNKNOWN";
+
+        display_stats_t display_stats;
+        display_controller_get_stats(&display_stats);
+
+        ESP_LOGI(TAG, "Status: State=%s, Fluid=%s, Demo=%s, WiFi=%s, Displays=%lu, WebTriggers=%lu, Errors=%lu",
+                 state_name,
+                 fluid_level_to_string(g_system.current_fluid_level),
+                 g_system.demo_mode_enabled ? "YES" : "NO",
+                 g_system.wifi_enabled ? "YES" : "NO",
+                 display_stats.total_displays,
+                 g_system.total_web_triggers,
+                 fluid_sensors_get_error_count());
+
+        publish_portal_status_snapshot();
+
+        // Print demo mode status if active
+        if (g_system.demo_mode_enabled || g_system.auto_demo_requested || wifi_config_demo_mode_requested()) {
+            ESP_LOGI(TAG, "Demo Mode: Active=%s, Auto=%s, Portal=%s, Power=%s",
+                     g_system.demo_mode_enabled ? "YES" : "NO",
+                     g_system.auto_demo_requested ? "YES" : "NO",
+                     wifi_config_demo_mode_requested() ? "YES" : "NO",
+                     demo_mode_power_source_to_string(demo_mode_get_power_source()));
         }
 
         // Check for critical conditions
@@ -287,8 +303,10 @@ void app_main(void) {
 
     g_system.startup_time_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
     g_system.state = SYSTEM_STATE_INITIALIZING;
-    g_system.display_active = false;
-    g_system.total_activations = 0;
+    g_system.wifi_enabled = false;
+    g_system.demo_mode_enabled = false;
+    g_system.total_web_triggers = 0;
+    g_system.auto_demo_requested = false;
 
     // EMERGENCY LED SAFETY - Clear LEDs IMMEDIATELY on startup
     ESP_LOGI(TAG, "EMERGENCY: Clearing all LEDs for safety...");
@@ -320,19 +338,6 @@ void app_main(void) {
     // Initialize remaining components (LED matrix already initialized for safety)
     ESP_LOGI(TAG, "Initializing remaining system components...");
 
-    // Initialize accelerometer
-    qmi8658_config_t accel_config = {
-        .accel_scale = 2,      // ±2g range
-        .accel_odr = 250,      // 250Hz sampling
-        .enable_fifo = false,
-        .fifo_watermark = 0
-    };
-    ret = qmi8658_init(&accel_config);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Accelerometer init failed: %s", esp_err_to_name(ret));
-        // Continue without accelerometer - not critical for safety
-    }
-
     // Initialize fluid sensors
     fluid_config_t fluid_config = {
         .debounce_ms = 100,
@@ -345,46 +350,71 @@ void app_main(void) {
         // Continue - will show error pattern
     }
 
-    // Initialize tap detector
-    tap_config_t tap_config = {
-        .threshold_g = 1.5f,
-        .window_ms = 500,
-        .min_interval_ms = 150,
-        .max_interval_ms = 500,
-        .debounce_ms = 1000,
-        .filter_vibration = true,
-        .vibration_threshold = 0.5f
+    // Default Wi-Fi / scheduler configuration
+    wifi_config_init_t wifi_init_config = {
+        .enable_ap = true,
+        .enable_web_server = true,
+        .default_display = {
+            .periodic_display_enabled = true,
+            .display_interval_seconds = 900,    // 15 minutes
+            .display_duration_seconds = 7,      // 7 seconds
+            .display_brightness = 3,
+            .manual_trigger_enabled = true,
+            .auto_brightness = false
+        }
     };
-    ret = tap_detector_init(&tap_config);
+
+    display_controller_config_t display_config = {
+        .mode = wifi_init_config.default_display.periodic_display_enabled
+            ? DISPLAY_MODE_PERIODIC
+            : DISPLAY_MODE_MANUAL_ONLY,
+        .periodic_interval_ms = wifi_init_config.default_display.display_interval_seconds * 1000,
+        .display_duration_ms = wifi_init_config.default_display.display_duration_seconds * 1000,
+        .brightness = wifi_init_config.default_display.display_brightness,
+        .fade_in_out = false,
+        .show_startup_sequence = true
+    };
+
+    ret = display_controller_init(&display_config);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Tap detector init failed: %s", esp_err_to_name(ret));
-        // Continue - device will be always-on for debugging
+        ESP_LOGE(TAG, "Display controller init failed: %s", esp_err_to_name(ret));
+        // Continue - critical error
+    } else {
+        ESP_LOGI(TAG, "Display controller initialized");
     }
 
-    // Create display timeout timer
-    g_system.display_timer = xTimerCreate(
-        "display_timeout",
-        pdMS_TO_TICKS(DISPLAY_TIMEOUT_MS),
-        pdFALSE,  // One-shot timer
-        NULL,
-        display_timeout_callback
-    );
-    if (!g_system.display_timer) {
-        ESP_LOGE(TAG, "Failed to create display timer");
+    // Initialize WiFi configuration
+    ret = wifi_config_init(&wifi_init_config);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "WiFi config init failed: %s", esp_err_to_name(ret));
+        // Continue - not critical for basic operation
+    } else {
+        ESP_LOGI(TAG, "WiFi configuration initialized");
+        g_system.wifi_enabled = true;
+        wifi_config_set_display_config(&wifi_init_config.default_display);
     }
 
-    // Register callbacks if components initialized successfully
-    if (tap_detector_register_callback(triple_tap_detected_callback, NULL) == ESP_OK) {
-        ESP_LOGI(TAG, "Tap callback registered");
+    // Initialize demo mode detection
+    demo_config_t demo_config = {
+        .enable_detection = true,
+        .check_interval_ms = 5000,  // Check every 5 seconds
+        .verbose_logging = true
+    };
+    ret = demo_mode_init(&demo_config);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Demo mode init failed: %s", esp_err_to_name(ret));
+        // Continue - not critical for operation
+    } else {
+        ESP_LOGI(TAG, "Demo mode detection initialized");
     }
 
+    // Register callbacks
     if (fluid_sensors_register_callback(fluid_level_changed_callback, NULL) == ESP_OK) {
-        ESP_LOGI(TAG, "Fluid callback registered");
+        ESP_LOGI(TAG, "Fluid sensor callback registered");
     }
 
-    // Start tap detection if available
-    if (tap_detector_start_auto() == ESP_OK) {
-        ESP_LOGI(TAG, "Tap detection started");
+    if (display_controller_register_callback(display_event_callback, NULL) == ESP_OK) {
+        ESP_LOGI(TAG, "Display controller callback registered");
     }
 
     // Get initial fluid level
@@ -402,22 +432,105 @@ void app_main(void) {
         vTaskDelay(pdMS_TO_TICKS(3000));
     }
 
-    ESP_LOGI(TAG, "System ready! Triple-tap to activate display.");
+    // Start WiFi Access Point if enabled
+    if (g_system.wifi_enabled && g_system.state == SYSTEM_STATE_WIFI_SETUP) {
+        ESP_LOGI(TAG, "Starting WiFi Access Point...");
+        ret = wifi_config_start_ap();
+        if (ret == ESP_OK) {
+            ret = wifi_config_start_server();
+            if (ret == ESP_OK) {
+                ESP_LOGI(TAG, "WiFi Access Point and web server started");
+                wifi_config_print_info();
+            } else {
+                ESP_LOGE(TAG, "Failed to start web server: %s", esp_err_to_name(ret));
+            }
+        } else {
+            ESP_LOGE(TAG, "Failed to start WiFi AP: %s", esp_err_to_name(ret));
+        }
+    }
+
+    // Start display controller
+    if (g_system.state != SYSTEM_STATE_ERROR) {
+        ret = display_controller_start();
+        if (ret == ESP_OK) {
+            ESP_LOGI(TAG, "Display controller started");
+            g_system.state = SYSTEM_STATE_RUNNING;
+        } else {
+            ESP_LOGE(TAG, "Failed to start display controller: %s", esp_err_to_name(ret));
+        }
+    }
+
+    ESP_LOGI(TAG, "System ready! Web interface: http://192.168.4.1/");
     ESP_LOGI(TAG, "Current fluid level: %s", fluid_level_to_string(g_system.current_fluid_level));
+
+    publish_portal_status_snapshot();
 
     // Create system monitoring task
     xTaskCreate(
         system_monitor_task,
         "system_monitor",
-        2048,
+        4096,
         NULL,
         2,  // Low priority
         NULL
     );
 
-    // Main loop - system is now event-driven via callbacks
+    // Main loop - system is now timer and web driven
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
+
+        // Check for manual web triggers
+        if (wifi_config_should_trigger_display()) {
+            ESP_LOGI(TAG, "Manual web trigger detected");
+            display_controller_trigger_manual();
+            wifi_config_clear_trigger_flag();
+        }
+
+        // Check for demo mode activation
+        uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
+        if (now - g_system.last_demo_check >= 2000) {  // Check every 2 seconds
+            g_system.last_demo_check = now;
+
+            bool auto_demo_active = demo_mode_is_active();
+            g_system.auto_demo_requested = auto_demo_active;
+            bool portal_demo_requested = wifi_config_demo_mode_requested();
+            bool should_be_demo = auto_demo_active || portal_demo_requested;
+            bool currently_demo = (g_system.state == SYSTEM_STATE_DEMO_MODE);
+
+            // Transition to demo mode if requested
+            if (should_be_demo && !currently_demo && g_system.state == SYSTEM_STATE_RUNNING && !display_controller_is_active()) {
+                ESP_LOGI(TAG, "Demo mode detected via USB host connection");
+                g_system.state = SYSTEM_STATE_DEMO_MODE;
+                g_system.demo_mode_enabled = true;
+
+                // Stop regular display controller and start demo
+                display_controller_stop();
+                demo_mode_print_status();
+
+                esp_err_t demo_ret = demo_mode_start();
+                if (demo_ret == ESP_OK) {
+                    ESP_LOGI(TAG, "Demo mode started successfully");
+                } else {
+                    ESP_LOGE(TAG, "Failed to start demo mode: %s", esp_err_to_name(demo_ret));
+                }
+            }
+            // Transition out of demo mode if no longer applicable
+            else if (!should_be_demo && currently_demo) {
+                ESP_LOGI(TAG, "Exiting demo mode - returning to scheduled operation");
+                g_system.state = SYSTEM_STATE_RUNNING;
+                g_system.demo_mode_enabled = false;
+
+                esp_err_t stop_ret = demo_mode_stop();
+                if (stop_ret != ESP_OK) {
+                    ESP_LOGW(TAG, "Demo mode stop reported: %s", esp_err_to_name(stop_ret));
+                }
+
+                esp_err_t restart_ret = display_controller_start();
+                if (restart_ret != ESP_OK) {
+                    ESP_LOGE(TAG, "Failed to restart display controller: %s", esp_err_to_name(restart_ret));
+                }
+            }
+        }
 
         // Handle error recovery
         if (g_system.state == SYSTEM_STATE_ERROR) {

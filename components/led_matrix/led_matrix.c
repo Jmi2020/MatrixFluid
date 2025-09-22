@@ -37,11 +37,22 @@ const led_color_t LED_COLOR_YELLOW = {255, 255, 0};
 const led_color_t LED_COLOR_RED    = {255, 0, 0};
 const led_color_t LED_COLOR_OFF    = {0, 0, 0};
 
+// Additional demo colors
+static const led_color_t LED_COLOR_BLUE   = {0, 0, 255};
+static const led_color_t LED_COLOR_CYAN   = {0, 255, 255};
+static const led_color_t LED_COLOR_WHITE  = {255, 255, 255};
+static const led_color_t LED_COLOR_PURPLE = {255, 0, 255};
+
 // Pattern definitions (8x8 bit patterns)
 static const uint64_t PATTERN_GREEN_CHECK_BITS = 0x0018243C7E7E3C18ULL;
 static const uint64_t PATTERN_YELLOW_WARN_BITS = 0x3C7EFFFFFFFF7E3CULL;
 static const uint64_t PATTERN_RED_STOP_BITS     = 0xFFE7C3C3C3E7FFULL;
 static const uint64_t PATTERN_ERROR_X_BITS      = 0xC3663C183C66C3ULL;
+
+// Demo mode patterns
+static const uint64_t PATTERN_USB_ICON_BITS     = 0x183C7E7E7E3C1800ULL; // USB symbol
+static const uint64_t PATTERN_PIN_DISPLAY_BITS  = 0xFF818181818181FFULL; // Pin layout frame
+static const uint64_t PATTERN_DEMO_ARROW_BITS   = 0x10307FFE7E3C1800ULL; // Arrow pointing
 
 // Simple module state - no dynamic allocation
 static struct {
@@ -94,6 +105,40 @@ static void set_pattern_from_bitmap(uint64_t bitmap, led_color_t color) {
             }
         }
     }
+}
+
+/**
+ * @brief Display pin assignment information using LED positions
+ *
+ * Shows GPIO pins mapped to LED positions:
+ * - GPIO 2 (fluid sensor 1) at position (0,0) - BLUE
+ * - GPIO 3 (fluid sensor 2) at position (1,0) - CYAN
+ * - GPIO 8 (I2C SDA) at position (0,1) - GREEN
+ * - GPIO 9 (I2C SCL) at position (1,1) - YELLOW
+ * - GPIO 14 (LED data) at position (7,7) - WHITE
+ */
+static void set_pin_assignment_display(void) {
+    // Clear all pixels first
+    memset(led_state.framebuffer, 0, sizeof(led_state.framebuffer));
+
+    // GPIO 2 - Fluid sensor 1 (half-full)
+    led_state.framebuffer[xy_to_index(0, 0)] = apply_brightness(LED_COLOR_BLUE, led_state.current_brightness);
+
+    // GPIO 3 - Fluid sensor 2 (near-empty)
+    led_state.framebuffer[xy_to_index(1, 0)] = apply_brightness(LED_COLOR_CYAN, led_state.current_brightness);
+
+    // GPIO 8 - I2C SDA (accelerometer)
+    led_state.framebuffer[xy_to_index(0, 1)] = apply_brightness(LED_COLOR_GREEN, led_state.current_brightness);
+
+    // GPIO 9 - I2C SCL (accelerometer)
+    led_state.framebuffer[xy_to_index(1, 1)] = apply_brightness(LED_COLOR_YELLOW, led_state.current_brightness);
+
+    // GPIO 14 - LED Matrix Data (this display)
+    led_state.framebuffer[xy_to_index(7, 7)] = apply_brightness(LED_COLOR_WHITE, led_state.current_brightness);
+
+    // Add corner markers for reference
+    led_state.framebuffer[xy_to_index(7, 0)] = apply_brightness(LED_COLOR_RED, led_state.current_brightness);    // Top-right
+    led_state.framebuffer[xy_to_index(0, 7)] = apply_brightness(LED_COLOR_PURPLE, led_state.current_brightness); // Bottom-left
 }
 
 /**
@@ -297,6 +342,45 @@ esp_err_t led_matrix_show_pattern(led_pattern_t pattern, uint8_t brightness) {
             }
             break;
 
+        // Demo mode patterns
+        case PATTERN_DEMO_USB:
+            set_pattern_from_bitmap(PATTERN_USB_ICON_BITS, LED_COLOR_BLUE);
+            break;
+
+        case PATTERN_DEMO_PINS:
+            set_pin_assignment_display();
+            break;
+
+        case PATTERN_DEMO_FLUID_OK:
+            set_pattern_from_bitmap(PATTERN_GREEN_CHECK_BITS, LED_COLOR_GREEN);
+            // Add animated sparkle effect by lighting random pixels
+            for (int i = 0; i < 3; i++) {
+                uint8_t rand_idx = esp_random() % LED_MATRIX_SIZE;
+                led_state.framebuffer[rand_idx] = apply_brightness(LED_COLOR_WHITE, brightness);
+            }
+            break;
+
+        case PATTERN_DEMO_FLUID_LOW:
+            set_pattern_from_bitmap(PATTERN_YELLOW_WARN_BITS, LED_COLOR_YELLOW);
+            // Add blinking effect by alternating some pixels
+            for (int i = 0; i < LED_MATRIX_SIZE; i += 8) {
+                led_state.framebuffer[i] = apply_brightness(LED_COLOR_RED, brightness);
+            }
+            break;
+
+        case PATTERN_DEMO_FLUID_CRITICAL:
+            set_pattern_from_bitmap(PATTERN_RED_STOP_BITS, LED_COLOR_RED);
+            // Add urgent flashing border
+            for (int x = 0; x < LED_MATRIX_WIDTH; x++) {
+                led_state.framebuffer[xy_to_index(x, 0)] = apply_brightness(LED_COLOR_WHITE, brightness);
+                led_state.framebuffer[xy_to_index(x, 7)] = apply_brightness(LED_COLOR_WHITE, brightness);
+            }
+            for (int y = 0; y < LED_MATRIX_HEIGHT; y++) {
+                led_state.framebuffer[xy_to_index(0, y)] = apply_brightness(LED_COLOR_WHITE, brightness);
+                led_state.framebuffer[xy_to_index(7, y)] = apply_brightness(LED_COLOR_WHITE, brightness);
+            }
+            break;
+
         default:
             ESP_LOGE(TAG, "Unknown pattern: %d", pattern);
             led_state.current_brightness = old_brightness;
@@ -380,4 +464,117 @@ esp_err_t led_matrix_deinit(void) {
     ESP_LOGI(TAG, "LED matrix deinitialized");
 
     return ESP_OK;
+}
+
+// Demo mode timer and state
+static TimerHandle_t demo_mode_timer = NULL;
+static uint8_t demo_step = 0;
+static bool demo_mode_active = false;
+
+/**
+ * @brief Demo mode timer callback
+ */
+static void demo_mode_timer_callback(TimerHandle_t timer) {
+    if (!demo_mode_active || !led_state.initialized) {
+        return;
+    }
+
+    led_pattern_t patterns[] = {
+        PATTERN_DEMO_USB,
+        PATTERN_DEMO_PINS,
+        PATTERN_DEMO_FLUID_OK,
+        PATTERN_DEMO_FLUID_LOW,
+        PATTERN_DEMO_FLUID_CRITICAL
+    };
+
+    const char* pattern_names[] = {
+        "USB Power",
+        "Pin Assignments",
+        "Fluid OK Demo",
+        "Fluid Low Demo",
+        "Fluid Critical Demo"
+    };
+
+    esp_err_t ret = led_matrix_show_pattern(patterns[demo_step], LED_DEFAULT_BRIGHTNESS);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "Demo: %s", pattern_names[demo_step]);
+    } else {
+        ESP_LOGE(TAG, "Demo pattern failed: %s", esp_err_to_name(ret));
+    }
+
+    demo_step++;
+    if (demo_step >= sizeof(patterns) / sizeof(patterns[0])) {
+        demo_step = 0;
+    }
+}
+
+esp_err_t led_matrix_start_demo_mode(void) {
+    ESP_RETURN_ON_FALSE(led_state.initialized, ESP_ERR_INVALID_STATE, TAG, "not initialized");
+
+    if (demo_mode_active) {
+        ESP_LOGW(TAG, "Demo mode already active");
+        return ESP_OK;
+    }
+
+    ESP_LOGI(TAG, "Starting LED matrix demo mode");
+
+    // Create demo timer if not exists
+    if (!demo_mode_timer) {
+        demo_mode_timer = xTimerCreate(
+            "led_demo_timer",
+            pdMS_TO_TICKS(3000),  // 3 second intervals
+            pdTRUE,               // Auto-reload
+            NULL,
+            demo_mode_timer_callback
+        );
+
+        if (!demo_mode_timer) {
+            ESP_LOGE(TAG, "Failed to create demo mode timer");
+            return ESP_ERR_NO_MEM;
+        }
+    }
+
+    demo_mode_active = true;
+    demo_step = 0;
+
+    // Start with USB power indicator
+    esp_err_t ret = led_matrix_show_pattern(PATTERN_DEMO_USB, LED_DEFAULT_BRIGHTNESS);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to show initial demo pattern: %s", esp_err_to_name(ret));
+        demo_mode_active = false;
+        return ret;
+    }
+
+    // Start timer
+    if (xTimerStart(demo_mode_timer, pdMS_TO_TICKS(100)) != pdPASS) {
+        ESP_LOGE(TAG, "Failed to start demo mode timer");
+        demo_mode_active = false;
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "Demo mode started successfully");
+    return ESP_OK;
+}
+
+esp_err_t led_matrix_stop_demo_mode(void) {
+    if (!demo_mode_active) {
+        return ESP_OK;
+    }
+
+    ESP_LOGI(TAG, "Stopping LED matrix demo mode");
+
+    demo_mode_active = false;
+
+    // Stop timer
+    if (demo_mode_timer) {
+        xTimerStop(demo_mode_timer, pdMS_TO_TICKS(100));
+    }
+
+    // Clear display
+    esp_err_t ret = led_matrix_clear();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to clear display: %s", esp_err_to_name(ret));
+    }
+
+    return ret;
 }

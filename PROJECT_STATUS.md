@@ -29,8 +29,9 @@
 ### Hardware Specifications
 - **MCU**: ESP32-S3 (Waveshare Matrix board)
 - **Display**: 8×8 RGB LED matrix (WS2812B) on GPIO14
-- **Sensors**: Fluid level (GPIO2/3), QMI8658 accelerometer (I2C GPIO8/9)
-- **Safety**: Brightness ≤40/255, 7-second auto-shutoff, triple-tap activation
+- **Sensors**: Fluid level (GPIO2/3)
+- **Connectivity**: Wi-Fi soft AP for manual status refresh
+- **Safety**: Brightness ≤5/255, 7-second auto-shutoff, timed activation cycle
 
 ### Required ESP-IDF Components
 
@@ -47,24 +48,23 @@
 // ESP-IDF RMT driver for WS2812B control
 // - RMT peripheral configuration
 // - 8×8 pixel buffer management
-// - Safety brightness limiting (max 40/255)
+// - Safety brightness limiting (max 5/255)
 // - Icon pattern rendering
 ```
 
 #### 3. Sensors Component (`components/sensors/`)
 ```c
-// GPIO and I2C sensor interfaces
+// GPIO sensor interfaces
 // - Fluid level sensor reading (GPIO2/3)
-// - QMI8658 accelerometer I2C driver (GPIO8/9)
 // - Sensor data filtering and validation
 ```
 
-#### 4. Tap Detection Component (`components/tap_detection/`)
+#### 4. Display Controller (`components/display_controller/`)
 ```c
-// Triple-tap gesture recognition
-// - Accelerometer interrupt handling
-// - State machine for tap sequence
-// - Vibration filtering algorithms
+// Timed display scheduler
+// - Wake interval management
+// - Manual triggers from Wi-Fi portal
+// - Auto-shutoff and safety guardrails
 ```
 
 ### AI Team Assignments Ready
@@ -91,20 +91,20 @@ idf.py build            # Test basic build
 ### 3. Implementation Sequence
 1. **Create component structure** (`components/` directories)
 2. **Implement LED matrix** with RMT driver
-3. **Add sensor interfaces** (GPIO + I2C)
-4. **Build tap detection** state machine
+3. **Add sensor interfaces** (GPIO polling + debouncing)
+4. **Build timed scheduler** for display cycles and Wi-Fi triggers
 5. **Integrate main application** with FreeRTOS tasks
 6. **Validate safety features** with code review
 
 ### 4. Key Safety Validations Needed
-- LED brightness hard-coded at 40/255 maximum
+- LED brightness hard-coded at 5/255 maximum
 - Auto-shutoff timer functionality
-- Triple-tap sequence validation
+- Scheduler interval accuracy and watchdog coverage
 - Sensor error handling (fail-safe to caution state)
 
 ## Project Context
 This is a **safety-critical vehicle application** requiring:
-- Real-time response (<100ms tap detection)
+- Predictable wake cadence for visibility without distraction
 - Power efficiency (auto-shutoff, sleep modes)
 - Robust error handling (graceful degradation)
 - Hardware protection (brightness limits)

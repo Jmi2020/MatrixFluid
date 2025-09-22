@@ -24,7 +24,8 @@ paths:
                 display_active: false
                 last_activation: "2025-01-18T10:30:00Z"
                 uptime_seconds: 3600
-                total_activations: 42
+                total_updates: 42
+                next_wake_seconds: 540
                 temperature_celsius: 25
                 battery_voltage: 12.6
 
@@ -127,9 +128,12 @@ components:
         uptime_seconds:
           type: integer
           description: Seconds since device boot
-        total_activations:
+        total_updates:
           type: integer
-          description: Total number of display activations
+          description: Total number of scheduled/manual updates served
+        next_wake_seconds:
+          type: integer
+          description: Seconds until next scheduled refresh
         temperature_celsius:
           type: number
           description: Internal temperature sensor reading
@@ -143,26 +147,23 @@ components:
         led_brightness:
           type: integer
           minimum: 1
-          maximum: 40
-          description: LED brightness (capped at 40/255)
+          maximum: 5
+          description: LED brightness (capped at 5/255)
         display_timeout_ms:
           type: integer
           minimum: 1000
           maximum: 30000
           description: Display auto-off timeout in milliseconds
-        tap_threshold_g:
-          type: number
-          minimum: 0.5
-          maximum: 3.0
-          description: Acceleration threshold for tap detection
-        tap_window_ms:
+        update_interval_minutes:
           type: integer
-          minimum: 100
-          maximum: 1000
-          description: Maximum time between taps
+          minimum: 1
+          maximum: 120
+          description: Minutes between scheduled status updates
         wifi_enabled:
           type: boolean
           description: Wi-Fi AP enable/disable
-        ble_enabled:
-          type: boolean
-          description: BLE advertising enable/disable
+        portal_request_debounce_s:
+          type: integer
+          minimum: 1
+          maximum: 60
+          description: Minimum seconds between manual refreshes per client

@@ -38,10 +38,13 @@
 
 ## Path Conventions
 - **Embedded project**: `src/` at repository root
-- **Test files**: `test/` at repository root
-- **Build config**: `platformio.ini` at root
+
+> **Update (2025-XX-XX):** Implementation now lives in `main/` and `components/` under ESP-IDF; legacy `src/` references remain for context when reading past tasks.
+- **Test files**: Legacy `test/` directory (current development uses `components/<module>/test/`)
+- **Build config**: Historic `platformio.ini` (superseded by `idf.py` project configuration)
 
 ## Phase 3.1: Setup
+> Legacy note: Tasks referencing `tap_detection` or accelerometer support originate from the initial gesture-based concept and are retained for historical context. Current work prioritises timed scheduling and Wi-Fi portal integration.
 - [X] T001 Create project directory structure per plan.md (src/, src/sensors/, src/display/, src/detection/, src/wireless/)
 - [X] T002 Initialize PlatformIO project with platformio.ini for esp32-s3-devkitc-1 and Arduino framework
 - [X] T003 Add library dependencies to platformio.ini (FastLED, QMI8658 sensor library)
@@ -84,7 +87,7 @@
 ## Phase 3.7: Hardware Testing & Tuning
 - [ ] T028 Create test/manual_bench_test.md with step-by-step hardware testing procedures
 - [ ] T029 Tune TAP_THRESHOLD_G and TAP_WINDOW_MS based on physical testing
-- [ ] T030 Verify LED brightness safety with thermal testing (must stay <40/255)
+- [ ] T030 Verify LED brightness safety with thermal testing (must stay ≤5/255)
 - [ ] T031 Test power consumption in different states with multimeter
 - [ ] T032 Validate sensor logic with jumper wire simulation
 
@@ -145,7 +148,7 @@ Task: "Write docs/troubleshooting.md"
 - [P] tasks = different files, no shared dependencies
 - Hardware testing requires physical board and sensors
 - Wireless features are compile-time optional (check ENABLE_WIFI/ENABLE_BLE)
-- Safety critical: LED_BRIGHTNESS must never exceed 40/255
+- Safety critical: LED_BRIGHTNESS must never exceed 5/255
 - Use PlatformIO Monitor for serial debugging (115200 baud)
 - Commit after each completed phase
 

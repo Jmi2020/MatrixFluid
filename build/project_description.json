@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "MatrixFluid",
-    "project_version":    "1b4d507-dirty",
+    "project_version":    "9bc1f4a-dirty",
     "project_path":       "/Users/silverlinings/Desktop/Coding/MatrixFluid",
     "idf_path":           "/Users/silverlinings/esp/v5.5/esp-idf",
     "build_dir":          "/Users/silverlinings/Desktop/Coding/MatrixFluid/build",
@@ -21,12 +21,12 @@
     "monitor_toolprefix": "xtensa-esp32s3-elf-",
     "c_compiler":         "/Users/silverlinings/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc",
     "config_environment" : {
-        "COMPONENT_KCONFIGS" : "/Users/silverlinings/esp/v5.5/esp-idf/components/driver/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/efuse/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_common/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_ana_cmpr/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_bitscrambler/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_dac/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_gpio/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_gptimer/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_i2c/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_i2s/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_ledc/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_mcpwm/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_parlio/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_pcnt/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_rmt/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_sdm/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_spi/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_tsens/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_twai/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_uart/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_usb_serial_jtag/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_hw_support/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_mm/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_partition/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_pm/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_ringbuf/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_rom/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_security/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_system/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_timer/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/freertos/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/hal/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/heap/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/log/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/mbedtls/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/pthread/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/soc/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/Kconfig",
+        "COMPONENT_KCONFIGS" : "/Users/silverlinings/esp/v5.5/esp-idf/components/driver/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/efuse/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_coex/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_common/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_ana_cmpr/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_bitscrambler/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_dac/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_gpio/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_gptimer/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_i2c/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_i2s/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_ledc/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_mcpwm/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_parlio/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_pcnt/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_rmt/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_sdm/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_spi/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_tsens/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_twai/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_uart/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_usb_serial_jtag/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_event/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_http_server/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_hw_support/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_mm/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_partition/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_phy/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_pm/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_ringbuf/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_rom/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_security/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_system/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_timer/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/freertos/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/hal/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/heap/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/log/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/mbedtls/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/pthread/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/soc/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/Kconfig;/Users/silverlinings/esp/v5.5/esp-idf/components/vfs/Kconfig",
         "COMPONENT_KCONFIGS_PROJBUILD" : "/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/Kconfig.projbuild;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_app_format/Kconfig.projbuild;/Users/silverlinings/esp/v5.5/esp-idf/components/esp_rom/Kconfig.projbuild;/Users/silverlinings/esp/v5.5/esp-idf/components/esptool_py/Kconfig.projbuild;/Users/silverlinings/esp/v5.5/esp-idf/components/partition_table/Kconfig.projbuild"
     },
     "common_component_reqs": [ "cxx", "newlib", "freertos", "esp_hw_support", "heap", "log", "soc", "hal", "esp_rom", "esp_common", "esp_system", "xtensa" ],
-    "build_components" : [ "adafruit_neopixel", "app_update", "bootloader", "bootloader_support", "cxx", "driver", "efuse", "esp_app_format", "esp_bootloader_format", "esp_common", "esp_driver_ana_cmpr", "esp_driver_bitscrambler", "esp_driver_dac", "esp_driver_gpio", "esp_driver_gptimer", "esp_driver_i2c", "esp_driver_i2s", "esp_driver_ledc", "esp_driver_mcpwm", "esp_driver_parlio", "esp_driver_pcnt", "esp_driver_rmt", "esp_driver_sdio", "esp_driver_sdm", "esp_driver_sdmmc", "esp_driver_sdspi", "esp_driver_spi", "esp_driver_tsens", "esp_driver_twai", "esp_driver_uart", "esp_driver_usb_serial_jtag", "esp_hw_support", "esp_mm", "esp_partition", "esp_pm", "esp_ringbuf", "esp_rom", "esp_security", "esp_system", "esp_timer", "esptool_py", "freertos", "hal", "heap", "led_matrix", "log", "main", "mbedtls", "newlib", "partition_table", "pthread", "sdmmc", "sensors", "soc", "spi_flash", "tap_detection", "xtensa", "" ],
-    "build_component_paths" : [ "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/adafruit_neopixel", "/Users/silverlinings/esp/v5.5/esp-idf/components/app_update", "/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader", "/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader_support", "/Users/silverlinings/esp/v5.5/esp-idf/components/cxx", "/Users/silverlinings/esp/v5.5/esp-idf/components/driver", "/Users/silverlinings/esp/v5.5/esp-idf/components/efuse", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_app_format", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_bootloader_format", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_common", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_ana_cmpr", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_bitscrambler", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_dac", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_gpio", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_gptimer", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_i2c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_i2s", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_ledc", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_mcpwm", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_parlio", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_pcnt", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_rmt", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_sdio", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_sdm", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_sdmmc", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_sdspi", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_spi", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_tsens", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_twai", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_uart", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_usb_serial_jtag", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_hw_support", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_mm", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_partition", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_pm", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_ringbuf", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_rom", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_security", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_system", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_timer", "/Users/silverlinings/esp/v5.5/esp-idf/components/esptool_py", "/Users/silverlinings/esp/v5.5/esp-idf/components/freertos", "/Users/silverlinings/esp/v5.5/esp-idf/components/hal", "/Users/silverlinings/esp/v5.5/esp-idf/components/heap", "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/led_matrix", "/Users/silverlinings/esp/v5.5/esp-idf/components/log", "/Users/silverlinings/Desktop/Coding/MatrixFluid/main", "/Users/silverlinings/esp/v5.5/esp-idf/components/mbedtls", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib", "/Users/silverlinings/esp/v5.5/esp-idf/components/partition_table", "/Users/silverlinings/esp/v5.5/esp-idf/components/pthread", "/Users/silverlinings/esp/v5.5/esp-idf/components/sdmmc", "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/sensors", "/Users/silverlinings/esp/v5.5/esp-idf/components/soc", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash", "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/tap_detection", "/Users/silverlinings/esp/v5.5/esp-idf/components/xtensa", "" ],
+    "build_components" : [ "adafruit_neopixel", "app_update", "bootloader", "bootloader_support", "cxx", "demo_mode", "display_controller", "driver", "efuse", "esp_app_format", "esp_bootloader_format", "esp_coex", "esp_common", "esp_driver_ana_cmpr", "esp_driver_bitscrambler", "esp_driver_dac", "esp_driver_gpio", "esp_driver_gptimer", "esp_driver_i2c", "esp_driver_i2s", "esp_driver_ledc", "esp_driver_mcpwm", "esp_driver_parlio", "esp_driver_pcnt", "esp_driver_rmt", "esp_driver_sdio", "esp_driver_sdm", "esp_driver_sdmmc", "esp_driver_sdspi", "esp_driver_spi", "esp_driver_tsens", "esp_driver_twai", "esp_driver_uart", "esp_driver_usb_serial_jtag", "esp_event", "esp_http_server", "esp_hw_support", "esp_mm", "esp_netif", "esp_netif_stack", "esp_partition", "esp_phy", "esp_pm", "esp_ringbuf", "esp_rom", "esp_security", "esp_system", "esp_timer", "esp_vfs_console", "esp_wifi", "esptool_py", "freertos", "hal", "heap", "http_parser", "json", "led_matrix", "log", "lwip", "main", "mbedtls", "newlib", "nvs_flash", "partition_table", "pthread", "sdmmc", "sensors", "soc", "spi_flash", "vfs", "wifi_config", "wpa_supplicant", "xtensa", "" ],
+    "build_component_paths" : [ "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/adafruit_neopixel", "/Users/silverlinings/esp/v5.5/esp-idf/components/app_update", "/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader", "/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader_support", "/Users/silverlinings/esp/v5.5/esp-idf/components/cxx", "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/demo_mode", "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/display_controller", "/Users/silverlinings/esp/v5.5/esp-idf/components/driver", "/Users/silverlinings/esp/v5.5/esp-idf/components/efuse", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_app_format", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_bootloader_format", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_coex", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_common", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_ana_cmpr", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_bitscrambler", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_dac", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_gpio", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_gptimer", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_i2c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_i2s", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_ledc", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_mcpwm", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_parlio", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_pcnt", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_rmt", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_sdio", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_sdm", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_sdmmc", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_sdspi", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_spi", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_tsens", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_twai", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_uart", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_usb_serial_jtag", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_event", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_http_server", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_hw_support", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_mm", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif_stack", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_partition", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_phy", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_pm", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_ringbuf", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_rom", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_security", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_system", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_timer", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_vfs_console", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi", "/Users/silverlinings/esp/v5.5/esp-idf/components/esptool_py", "/Users/silverlinings/esp/v5.5/esp-idf/components/freertos", "/Users/silverlinings/esp/v5.5/esp-idf/components/hal", "/Users/silverlinings/esp/v5.5/esp-idf/components/heap", "/Users/silverlinings/esp/v5.5/esp-idf/components/http_parser", "/Users/silverlinings/esp/v5.5/esp-idf/components/json", "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/led_matrix", "/Users/silverlinings/esp/v5.5/esp-idf/components/log", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip", "/Users/silverlinings/Desktop/Coding/MatrixFluid/main", "/Users/silverlinings/esp/v5.5/esp-idf/components/mbedtls", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash", "/Users/silverlinings/esp/v5.5/esp-idf/components/partition_table", "/Users/silverlinings/esp/v5.5/esp-idf/components/pthread", "/Users/silverlinings/esp/v5.5/esp-idf/components/sdmmc", "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/sensors", "/Users/silverlinings/esp/v5.5/esp-idf/components/soc", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash", "/Users/silverlinings/esp/v5.5/esp-idf/components/vfs", "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/wifi_config", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant", "/Users/silverlinings/esp/v5.5/esp-idf/components/xtensa", "" ],
     "build_component_info" : {
         "adafruit_neopixel": {
             "alias": "idf::adafruit_neopixel",
@@ -103,6 +103,36 @@
             "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/cxx/cxx_exception_stubs.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/cxx/cxx_guards.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/cxx/cxx_init.cpp" ],
             "include_dirs": []
         },
+        "demo_mode": {
+            "alias": "idf::demo_mode",
+            "target": "___idf_demo_mode",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/demo_mode",
+            "type": "LIBRARY",
+            "lib": "__idf_demo_mode",
+            "reqs": [ "driver", "freertos", "esp_common", "log", "led_matrix" ],
+            "priv_reqs": [],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/demo_mode/libdemo_mode.a",
+            "sources": [ "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/demo_mode/demo_mode.c" ],
+            "include_dirs": [ "include" ]
+        },
+        "display_controller": {
+            "alias": "idf::display_controller",
+            "target": "___idf_display_controller",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/display_controller",
+            "type": "LIBRARY",
+            "lib": "__idf_display_controller",
+            "reqs": [ "led_matrix", "sensors", "freertos", "esp_timer", "log", "esp_common" ],
+            "priv_reqs": [],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/display_controller/libdisplay_controller.a",
+            "sources": [ "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/display_controller/display_controller.c" ],
+            "include_dirs": [ "include" ]
+        },
         "driver": {
             "alias": "idf::driver",
             "target": "___idf_driver",
@@ -161,6 +191,21 @@
             "managed_priv_reqs": [],
             "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/esp_bootloader_format/libesp_bootloader_format.a",
             "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_bootloader_format/esp_bootloader_desc.c" ],
+            "include_dirs": [ "include" ]
+        },
+        "esp_coex": {
+            "alias": "idf::esp_coex",
+            "target": "___idf_esp_coex",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_coex",
+            "type": "LIBRARY",
+            "lib": "__idf_esp_coex",
+            "reqs": [],
+            "priv_reqs": [ "esp_timer", "esp_driver_gpio" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/esp_coex/libesp_coex.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_coex/esp32s3/esp_coex_adapter.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_coex/src/coexist_debug_diagram.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_coex/src/coexist_debug.c" ],
             "include_dirs": [ "include" ]
         },
         "esp_common": {
@@ -475,7 +520,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/esp_driver_uart/libesp_driver_uart.a",
-            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_uart/src/uart.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_uart/src/uart_wakeup.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_uart/src/uhci.c" ],
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_uart/src/uart.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_uart/src/uart_wakeup.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_uart/src/uhci.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_uart/src/uart_vfs.c" ],
             "include_dirs": [ "include" ]
         },
         "esp_driver_usb_serial_jtag": {
@@ -490,7 +535,37 @@
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/esp_driver_usb_serial_jtag/libesp_driver_usb_serial_jtag.a",
-            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_usb_serial_jtag/src/usb_serial_jtag.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_connection_monitor.c" ],
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_usb_serial_jtag/src/usb_serial_jtag.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_connection_monitor.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_vfs.c" ],
+            "include_dirs": [ "include" ]
+        },
+        "esp_event": {
+            "alias": "idf::esp_event",
+            "target": "___idf_esp_event",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_event",
+            "type": "LIBRARY",
+            "lib": "__idf_esp_event",
+            "reqs": [ "log", "esp_common", "freertos" ],
+            "priv_reqs": [ "esp_timer" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/esp_event/libesp_event.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_event/default_event_loop.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_event/esp_event.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_event/esp_event_private.c" ],
+            "include_dirs": [ "include" ]
+        },
+        "esp_http_server": {
+            "alias": "idf::esp_http_server",
+            "target": "___idf_esp_http_server",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_http_server",
+            "type": "LIBRARY",
+            "lib": "__idf_esp_http_server",
+            "reqs": [ "http_parser", "esp_event" ],
+            "priv_reqs": [ "mbedtls", "lwip", "esp_timer" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/esp_http_server/libesp_http_server.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_http_server/src/httpd_main.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_http_server/src/httpd_parse.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_http_server/src/httpd_sess.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_http_server/src/httpd_txrx.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_http_server/src/httpd_uri.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_http_server/src/httpd_ws.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_http_server/src/util/ctrl_sock.c" ],
             "include_dirs": [ "include" ]
         },
         "esp_hw_support": {
@@ -523,6 +598,36 @@
             "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_mm/esp_mmu_map.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_mm/port/esp32s3/ext_mem_layout.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_mm/esp_cache_msync.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_mm/esp_cache_utils.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_mm/heap_align_hw.c" ],
             "include_dirs": [ "include" ]
         },
+        "esp_netif": {
+            "alias": "idf::esp_netif",
+            "target": "___idf_esp_netif",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif",
+            "type": "LIBRARY",
+            "lib": "__idf_esp_netif",
+            "reqs": [ "esp_event" ],
+            "priv_reqs": [ "esp_netif_stack" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/esp_netif/libesp_netif.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif/esp_netif_handlers.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif/esp_netif_objects.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif/esp_netif_defaults.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif/lwip/esp_netif_lwip.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif/lwip/esp_netif_sntp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif/lwip/esp_netif_lwip_defaults.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif/lwip/netif/wlanif.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif/lwip/netif/ethernetif.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif/lwip/netif/esp_pbuf_ref.c" ],
+            "include_dirs": [ "include" ]
+        },
+        "esp_netif_stack": {
+            "alias": "idf::esp_netif_stack",
+            "target": "___idf_esp_netif_stack",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_netif_stack",
+            "type": "CONFIG_ONLY",
+            "lib": "__idf_esp_netif_stack",
+            "reqs": [ "lwip" ],
+            "priv_reqs": [],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "",
+            "sources": [],
+            "include_dirs": []
+        },
         "esp_partition": {
             "alias": "idf::esp_partition",
             "target": "___idf_esp_partition",
@@ -537,6 +642,21 @@
             "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/esp_partition/libesp_partition.a",
             "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_partition/partition.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_partition/partition_target.c" ],
             "include_dirs": [ "include" ]
+        },
+        "esp_phy": {
+            "alias": "idf::esp_phy",
+            "target": "___idf_esp_phy",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_phy",
+            "type": "LIBRARY",
+            "lib": "__idf_esp_phy",
+            "reqs": [],
+            "priv_reqs": [ "nvs_flash", "esp_driver_gpio", "efuse", "esp_timer", "esp_wifi" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/esp_phy/libesp_phy.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_phy/src/phy_override.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_phy/src/lib_printf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_phy/src/phy_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_phy/src/phy_init.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_phy/esp32s3/phy_init_data.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_phy/src/btbb_init.c" ],
+            "include_dirs": [ "include", "esp32s3/include" ]
         },
         "esp_pm": {
             "alias": "idf::esp_pm",
@@ -628,6 +748,36 @@
             "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_timer/src/esp_timer.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_timer/src/esp_timer_init.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_timer/src/ets_timer_legacy.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_timer/src/system_time.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_timer/src/esp_timer_impl_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_timer/src/esp_timer_impl_systimer.c" ],
             "include_dirs": [ "include" ]
         },
+        "esp_vfs_console": {
+            "alias": "idf::esp_vfs_console",
+            "target": "___idf_esp_vfs_console",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_vfs_console",
+            "type": "LIBRARY",
+            "lib": "__idf_esp_vfs_console",
+            "reqs": [],
+            "priv_reqs": [ "vfs", "esp_driver_uart", "esp_driver_usb_serial_jtag" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/esp_vfs_console/libesp_vfs_console.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_vfs_console/vfs_console.c" ],
+            "include_dirs": [ "include" ]
+        },
+        "esp_wifi": {
+            "alias": "idf::esp_wifi",
+            "target": "___idf_esp_wifi",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi",
+            "type": "LIBRARY",
+            "lib": "__idf_esp_wifi",
+            "reqs": [ "esp_event", "esp_phy", "esp_netif" ],
+            "priv_reqs": [ "esptool_py", "esp_pm", "esp_timer", "nvs_flash", "wpa_supplicant", "hal", "lwip", "esp_coex" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/esp_wifi/libesp_wifi.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi/src/lib_printf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi/src/mesh_event.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi/src/smartconfig.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi/src/wifi_init.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi/src/wifi_default.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi/src/wifi_netif.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi/src/wifi_default_ap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi/esp32s3/esp_adapter.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi/regulatory/esp_wifi_regulatory.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/esp_wifi/src/smartconfig_ack.c" ],
+            "include_dirs": [ "include", "include/local", "wifi_apps/include", "wifi_apps/nan_app/include" ]
+        },
         "esptool_py": {
             "alias": "idf::esptool_py",
             "target": "___idf_esptool_py",
@@ -688,6 +838,36 @@
             "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/heap/heap_caps_base.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/heap/heap_caps.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/heap/heap_caps_init.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/heap/multi_heap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/heap/tlsf/tlsf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/heap/port/memory_layout_utils.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/heap/port/esp32s3/memory_layout.c" ],
             "include_dirs": [ "include", "tlsf" ]
         },
+        "http_parser": {
+            "alias": "idf::http_parser",
+            "target": "___idf_http_parser",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/http_parser",
+            "type": "LIBRARY",
+            "lib": "__idf_http_parser",
+            "reqs": [],
+            "priv_reqs": [],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/http_parser/libhttp_parser.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/http_parser/http_parser.c" ],
+            "include_dirs": [ "." ]
+        },
+        "json": {
+            "alias": "idf::json",
+            "target": "___idf_json",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/json",
+            "type": "LIBRARY",
+            "lib": "__idf_json",
+            "reqs": [],
+            "priv_reqs": [],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/json/libjson.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/json/cJSON/cJSON.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/json/cJSON/cJSON_Utils.c" ],
+            "include_dirs": [ "cJSON" ]
+        },
         "led_matrix": {
             "alias": "idf::led_matrix",
             "target": "___idf_led_matrix",
@@ -718,6 +898,21 @@
             "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/os/log_timestamp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/log_timestamp_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/os/log_lock.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/buffer/log_buffers.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/os/util.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/util.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/log_format_text.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/log_print.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/log.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/os/log_write.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/log_level/log_level.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/log_level/tag_log_level/tag_log_level.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/log_level/tag_log_level/linked_list/log_linked_list.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/log/src/log_level/tag_log_level/cache/log_binary_heap.c" ],
             "include_dirs": [ "include" ]
         },
+        "lwip": {
+            "alias": "idf::lwip",
+            "target": "___idf_lwip",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip",
+            "type": "LIBRARY",
+            "lib": "__idf_lwip",
+            "reqs": [],
+            "priv_reqs": [ "vfs" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/lwip/liblwip.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/apps/sntp/sntp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/api/api_lib.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/api/api_msg.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/api/err.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/api/if_api.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/api/netbuf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/api/netdb.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/api/netifapi.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/api/sockets.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/api/tcpip.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/apps/sntp/sntp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/apps/netbiosns/netbiosns.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/def.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/dns.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/inet_chksum.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/init.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ip.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/mem.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/memp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/netif.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/pbuf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/raw.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/stats.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/sys.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/tcp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/tcp_in.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/tcp_out.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/timeouts.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/udp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv4/autoip.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv4/dhcp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv4/etharp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv4/icmp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv4/igmp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv4/ip4.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv4/ip4_napt.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv4/ip4_addr.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv4/ip4_frag.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv6/dhcp6.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv6/ethip6.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv6/icmp6.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv6/inet6.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv6/ip6.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv6/ip6_addr.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv6/ip6_frag.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv6/mld6.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/core/ipv6/nd6.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ethernet.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/bridgeif.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/bridgeif_fdb.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/slipif.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/auth.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/ccp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/chap-md5.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/chap-new.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/chap_ms.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/demand.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/eap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/ecp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/eui64.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/fsm.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/ipcp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/ipv6cp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/lcp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/magic.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/mppe.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/multilink.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/ppp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/pppapi.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/pppcrypt.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/pppoe.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/pppol2tp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/pppos.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/upap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/utils.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/vj.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/port/hooks/tcp_isn_default.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/port/hooks/lwip_default_hooks.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/port/debug/lwip_debug.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/port/sockets_ext.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/port/freertos/sys_arch.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/port/if_index.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/port/acd_dhcp_check.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/port/esp32xx/vfs_lwip.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/apps/ping/esp_ping.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/apps/ping/ping.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/apps/ping/ping_sock.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/polarssl/arc4.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/polarssl/des.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/polarssl/md4.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/polarssl/md5.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/lwip/src/netif/ppp/polarssl/sha1.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/lwip/apps/dhcpserver/dhcpserver.c" ],
+            "include_dirs": [ "include", "include/apps", "include/apps/sntp", "lwip/src/include", "port/include", "port/freertos/include/", "port/esp32xx/include", "port/esp32xx/include/arch", "port/esp32xx/include/sys" ]
+        },
         "main": {
             "alias": "idf::main",
             "target": "___idf_main",
@@ -726,7 +921,7 @@
             "type": "LIBRARY",
             "lib": "__idf_main",
             "reqs": [],
-            "priv_reqs": [ "driver", "freertos", "esp_timer", "spi_flash", "led_matrix", "sensors", "tap_detection", "adafruit_neopixel" ],
+            "priv_reqs": [ "driver", "freertos", "esp_timer", "spi_flash", "led_matrix", "sensors", "display_controller", "wifi_config", "demo_mode", "adafruit_neopixel", "esp_wifi", "esp_netif", "esp_http_server" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/main/libmain.a",
@@ -762,6 +957,21 @@
             "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/newlib/libnewlib.a",
             "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/init.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/abort.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/assert.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/heap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/locks.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/poll.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/pthread.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/random.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/getentropy.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/termios.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/stdatomic.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/time.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/sysconf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/realpath.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/scandir.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/syscalls.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/reent_syscalls.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/port/esp_time_impl.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/flockfile.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/reent_init.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/newlib_init.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/newlib/src/port/esp_time_impl.c" ],
             "include_dirs": [ "platform_include" ]
+        },
+        "nvs_flash": {
+            "alias": "idf::nvs_flash",
+            "target": "___idf_nvs_flash",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash",
+            "type": "LIBRARY",
+            "lib": "__idf_nvs_flash",
+            "reqs": [ "esp_partition" ],
+            "priv_reqs": [ "spi_flash", "newlib" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/nvs_flash/libnvs_flash.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_api.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_cxx_api.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_item_hash_list.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_page.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_pagemanager.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_storage.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_handle_simple.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_handle_locked.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_partition.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_partition_lookup.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_partition_manager.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_types.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_platform.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_bootloader.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_encrypted_partition.cpp", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_bootloader_aes.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/nvs_flash/src/nvs_bootloader_xts_aes.c" ],
+            "include_dirs": [ "include" ]
         },
         "partition_table": {
             "alias": "idf::partition_table",
@@ -820,7 +1030,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/sensors/libsensors.a",
-            "sources": [ "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/sensors/fluid_sensors.c", "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/sensors/qmi8658_accel.c" ],
+            "sources": [ "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/sensors/fluid_sensors.c" ],
             "include_dirs": [ "include" ]
         },
         "soc": {
@@ -853,20 +1063,50 @@
             "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/flash_brownout_hook.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/esp32s3/spi_flash_oct_flash_init.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_hpm_enable.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_chip_drivers.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_chip_generic.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_chip_issi.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_chip_mxic.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_chip_gd.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_chip_winbond.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_chip_boya.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_chip_mxic_opi.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_chip_th.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/memspi_host_driver.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/cache_utils.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/flash_mmap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/flash_ops.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_wrap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/esp_flash_api.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/esp_flash_spi_init.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_os_func_app.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/spi_flash/spi_flash_os_func_noos.c" ],
             "include_dirs": [ "include" ]
         },
-        "tap_detection": {
-            "alias": "idf::tap_detection",
-            "target": "___idf_tap_detection",
+        "vfs": {
+            "alias": "idf::vfs",
+            "target": "___idf_vfs",
             "prefix": "idf",
-            "dir": "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/tap_detection",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/vfs",
             "type": "LIBRARY",
-            "lib": "__idf_tap_detection",
-            "reqs": [ "freertos", "esp_timer", "sensors" ],
+            "lib": "__idf_vfs",
+            "reqs": [],
+            "priv_reqs": [ "esp_timer", "esp_driver_uart", "esp_driver_usb_serial_jtag", "esp_vfs_console" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/vfs/libvfs.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/vfs/vfs.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/vfs/vfs_eventfd.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/vfs/vfs_semihost.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/vfs/nullfs.c" ],
+            "include_dirs": [ "include" ]
+        },
+        "wifi_config": {
+            "alias": "idf::wifi_config",
+            "target": "___idf_wifi_config",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/wifi_config",
+            "type": "LIBRARY",
+            "lib": "__idf_wifi_config",
+            "reqs": [ "esp_wifi", "esp_netif", "esp_http_server", "nvs_flash", "log", "freertos", "esp_common", "json", "sensors", "display_controller", "demo_mode", "app_update" ],
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/tap_detection/libtap_detection.a",
-            "sources": [ "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/tap_detection/tap_detector.c" ],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/wifi_config/libwifi_config.a",
+            "sources": [ "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/wifi_config/wifi_config.c" ],
             "include_dirs": [ "include" ]
+        },
+        "wpa_supplicant": {
+            "alias": "idf::wpa_supplicant",
+            "target": "___idf_wpa_supplicant",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant",
+            "type": "LIBRARY",
+            "lib": "__idf_wpa_supplicant",
+            "reqs": [],
+            "priv_reqs": [ "mbedtls", "esp_timer", "esp_wifi" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "file": "/Users/silverlinings/Desktop/Coding/MatrixFluid/build/esp-idf/wpa_supplicant/libwpa_supplicant.a",
+            "sources": [ "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/port/os_xtensa.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/port/eloop.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/ap/ap_config.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/ap/ieee802_1x.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/ap/wpa_auth.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/ap/wpa_auth_ie.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/ap/pmksa_cache_auth.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/ap/sta_info.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/ap/ieee802_11.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/ap/comeback_token.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/common/sae.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/common/dragonfly.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/common/wpa_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/utils/bitfield.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/aes-siv.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/sha256-kdf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/ccmp.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/aes-gcm.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/crypto_ops.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/dh_group5.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/dh_groups.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/ms_funcs.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/sha1-tlsprf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/sha256-tlsprf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/sha384-tlsprf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/sha256-prf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/sha1-prf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/sha384-prf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/md4-internal.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/sha1-tprf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_common/eap_wsc_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/common/ieee802_11_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/chap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/eap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/eap_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/eap_mschapv2.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/eap_peap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/eap_peap_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/eap_tls.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/eap_tls_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/eap_ttls.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/mschapv2.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/eap_fast.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/eap_fast_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/eap_peer/eap_fast_pac.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/rsn_supp/pmksa_cache.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/rsn_supp/wpa.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/rsn_supp/wpa_ie.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/utils/base64.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/utils/common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/utils/ext_password.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/utils/uuid.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/utils/wpabuf.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/utils/wpa_debug.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/utils/json.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/wps/wps.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/wps/wps_attr_build.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/wps/wps_attr_parse.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/wps/wps_attr_process.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/wps/wps_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/wps/wps_dev_attr.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/wps/wps_enrollee.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/common/sae_pk.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/esp_eap_client.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/esp_wpa2_api_port.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/esp_wpa_main.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/esp_wpas_glue.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/esp_common.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/esp_wps.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/esp_wpa3.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/esp_owe.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/esp_hostap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/crypto/tls_mbedtls.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/crypto/crypto_mbedtls.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/crypto/crypto_mbedtls-bignum.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/crypto/crypto_mbedtls-rsa.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/crypto/crypto_mbedtls-ec.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/crypto/fastpsk.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/rc4.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/des-internal.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/esp_supplicant/src/crypto/fastpbkdf2.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/aes-wrap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/aes-unwrap.c", "/Users/silverlinings/esp/v5.5/esp-idf/components/wpa_supplicant/src/crypto/aes-ccm.c" ],
+            "include_dirs": [ "include", "port/include", "esp_supplicant/include" ]
         },
         "xtensa": {
             "alias": "idf::xtensa",
@@ -1855,7 +2095,7 @@
             "priv_reqs": [ "vfs" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
-            "include_dirs": []
+            "include_dirs": [ "include", "include/apps", "include/apps/sntp", "lwip/src/include", "port/include", "port/freertos/include/", "port/esp32xx/include", "port/esp32xx/include/arch", "port/esp32xx/include/sys" ]
         },
         "mbedtls": {
             "alias": "idf::mbedtls",
@@ -2188,7 +2428,7 @@
             "dir": "/Users/silverlinings/Desktop/Coding/MatrixFluid/main",
             "lib": "__idf_main",
             "reqs": [],
-            "priv_reqs": [ "driver", "freertos", "esp_timer", "spi_flash", "led_matrix", "sensors", "tap_detection", "adafruit_neopixel" ],
+            "priv_reqs": [ "driver", "freertos", "esp_timer", "spi_flash", "led_matrix", "sensors", "display_controller", "wifi_config", "demo_mode", "adafruit_neopixel", "esp_wifi", "esp_netif", "esp_http_server" ],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": []
@@ -2201,6 +2441,30 @@
             "lib": "__idf_adafruit_neopixel",
             "reqs": [],
             "priv_reqs": [ "driver", "esp_timer", "freertos" ],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "demo_mode": {
+            "alias": "idf::demo_mode",
+            "target": "___idf_demo_mode",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/demo_mode",
+            "lib": "__idf_demo_mode",
+            "reqs": [ "driver", "freertos", "esp_common", "log", "led_matrix" ],
+            "priv_reqs": [],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "display_controller": {
+            "alias": "idf::display_controller",
+            "target": "___idf_display_controller",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/display_controller",
+            "lib": "__idf_display_controller",
+            "reqs": [ "led_matrix", "sensors", "freertos", "esp_timer", "log", "esp_common" ],
+            "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "include_dirs": [ "include" ]
@@ -2236,6 +2500,18 @@
             "dir": "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/tap_detection",
             "lib": "__idf_tap_detection",
             "reqs": [ "freertos", "esp_timer", "sensors" ],
+            "priv_reqs": [],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
+        },
+        "wifi_config": {
+            "alias": "idf::wifi_config",
+            "target": "___idf_wifi_config",
+            "prefix": "idf",
+            "dir": "/Users/silverlinings/Desktop/Coding/MatrixFluid/components/wifi_config",
+            "lib": "__idf_wifi_config",
+            "reqs": [ "esp_wifi", "esp_netif", "esp_http_server", "nvs_flash", "log", "freertos", "esp_common", "json", "sensors", "display_controller", "demo_mode", "app_update" ],
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],

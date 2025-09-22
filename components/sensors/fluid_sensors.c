@@ -148,6 +148,9 @@ esp_err_t fluid_sensors_init(const fluid_config_t *config) {
     fluid_state.monitor_task_handle = NULL;
     fluid_state.monitoring_active = false;
 
+    // Mark initialized before taking initial reading so helper can run safely
+    fluid_state.initialized = true;
+
     // Read initial state
     fluid_reading_t initial_reading;
     ret = fluid_sensors_read_raw(&initial_reading);
@@ -156,8 +159,6 @@ esp_err_t fluid_sensors_init(const fluid_config_t *config) {
         fluid_state.current_level = fluid_state.stable_level;
         fluid_state.level_change_time_ms = initial_reading.timestamp_ms;
     }
-
-    fluid_state.initialized = true;
 
     // Start monitoring if enabled
     if (fluid_state.config.enable_monitoring) {
@@ -195,8 +196,12 @@ esp_err_t fluid_sensors_read_raw(fluid_reading_t *reading) {
     ESP_RETURN_ON_FALSE(fluid_state.initialized, ESP_ERR_INVALID_STATE, TAG, "not initialized");
     ESP_RETURN_ON_FALSE(reading, ESP_ERR_INVALID_ARG, TAG, "reading is NULL");
 
-    reading->half_sensor = gpio_get_level(FLUID_HALF_SENSOR_GPIO);
-    reading->empty_sensor = gpio_get_level(FLUID_EMPTY_SENSOR_GPIO);
+    int half_raw = gpio_get_level(FLUID_HALF_SENSOR_GPIO);
+    int empty_raw = gpio_get_level(FLUID_EMPTY_SENSOR_GPIO);
+
+    // Floats pull the line low when liquid is present; convert to bool accordingly.
+    reading->half_sensor = (half_raw == 0);
+    reading->empty_sensor = (empty_raw == 0);
     reading->timestamp_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
     reading->is_valid = true;
 

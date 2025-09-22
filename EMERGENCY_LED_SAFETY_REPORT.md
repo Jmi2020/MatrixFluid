@@ -93,7 +93,7 @@ led_config_t emergency_config = {
 
 ### Production Safety Checklist
 - [ ] Emergency LED clear verified
-- [ ] Maximum brightness capped at 40/255
+- [ ] Maximum brightness capped at 5/255
 - [ ] Hardware GPIO fallback tested
 - [ ] Memory allocation failure handled
 - [ ] Zero-brightness startup confirmed

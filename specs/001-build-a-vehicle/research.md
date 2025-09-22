@@ -5,7 +5,11 @@
 ## Executive Summary
 This document consolidates research findings for implementing a vehicle fluid level indicator on the Waveshare ESP32-S3-Matrix board. All NEEDS CLARIFICATION items from the specification have been resolved through technical analysis and best practices research.
 
+> **Update (2025-XX-XX):** The project direction now favours a timed wake cycle and Wi-Fi portal trigger instead of accelerometer-driven triple tap. Historical research on gesture detection is preserved below for completeness.
+
 ## Framework Selection
+
+> **Update (2025-XX-XX):** The project has since migrated to ESP-IDF 5.x for tighter safety control. The analysis below captures the original Arduino-oriented exploration for historical reference.
 
 ### Decision: Arduino Core for ESP32
 **Rationale**:
@@ -59,7 +63,14 @@ This document consolidates research findings for implementing a vehicle fluid le
 - Short enough to save power
 - User testing showed 5s too short, 10s unnecessary
 
-### Triple-tap Parameters
+### Timed Wake Strategy (Revised)
+**Decision**: Use a scheduler-driven wake every 10–15 minutes (exact default pending validation) with optional manual trigger via Wi-Fi portal.
+**Rationale**:
+- Eliminates dependence on accelerometer hardware and gesture tuning.
+- Ensures predictable reminders without driver interaction.
+- Portal-driven refresh covers on-demand use cases without physical taps.
+
+### Triple-tap Parameters (Legacy)
 **Decision**:
 - Window between taps: 150-500ms
 - Acceleration threshold: 1.5g

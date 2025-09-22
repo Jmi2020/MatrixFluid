@@ -6,6 +6,8 @@ Suggested AI Coding Prompt: You can feed the following prompt to an AI coding as
 
 **Project:** ESP32-S3-Matrix Vehicle Fluid Level Indicator
 
+> **2025 direction update:** The live design now relies on a timed scheduler and Wi-Fi portal trigger instead of tap detection. References to accelerometer gestures in this document are retained for historical context.
+
 **Hardware:** Waveshare ESP32-S3-Matrix board (ESP32-S3 with onboard 8×8 RGB LED matrix and QMI8658 accelerometer [oai_citation:0‡cnx-software.com](https://www.cnx-software.com/2024/05/13/esp32-s3-matrix-board-features-64-leds-20-gpio-pins-9-axis-attitude-sensor-for-robotics-and-motion-control-applications/#:~:text=,axis%20magnetometer) [oai_citation:1‡cnx-software.com](https://www.cnx-software.com/2024/05/13/esp32-s3-matrix-board-features-64-leds-20-gpio-pins-9-axis-attitude-sensor-for-robotics-and-motion-control-applications/#:~:text=%2F%20%E2%80%9CPICO%20D4%20RGB%E2%80%9D%20board,robotics%20and%20motion%20control%20projects)). Two fluid level sensors (digital inputs): one at mid-level (half-full) and one at low-level (near-empty).
 
 **Goal:** The device should indicate fluid level status on the 8×8 LED matrix using color-coded symbols, **only when activated by a user tap**. It must differentiate intentional tap patterns from normal vehicle motion.
@@ -128,7 +130,7 @@ Technical Context & Stack:
 	•	Platform: Firmware will run on the Waveshare ESP32-S3-Matrix board (ESP32-S3 MCU with built-in 8×8 RGB LED matrix and QMI8658 accelerometer) ￼ ￼. We’ll program it using the ESP-IDF framework (C/C++) or Arduino Core C++ (whichever allows faster development; Arduino might be simpler with available libraries). The choice depends on team familiarity – both are viable, and both support the required hardware.
 	•	Language & Framework: C/C++17 for embedded. If Arduino, we use the Arduino ESP32 core (with setup/loop structure). If ESP-IDF, we structure as an ESP-IDF component with an app_main. In either case, we will manage real-time responsiveness (using FreeRTOS tasks or simple loop delays as needed).
 	•	Key Libraries/Dependencies:
-	•	LED Matrix: Use Adafruit NeoPixel + NeoMatrix libraries or FastLED to control the WS2812B 8x8 LED array ￼ ￼. These handle the low-level timing to drive the addressable LEDs. We will configure the matrix with 64 LEDs on GPIO14 and set a global brightness limit (~40/255 or 15%) to cap output ￼.
+	•	LED Matrix: Use Adafruit NeoPixel + NeoMatrix libraries or FastLED to control the WS2812B 8x8 LED array ￼ ￼. These handle the low-level timing to drive the addressable LEDs. We will configure the matrix with 64 LEDs on GPIO14 and set a global brightness limit (~5/255 under the revised safety rules) to cap output ￼.
 	•	Graphics Rendering: If using Adafruit GFX (with NeoMatrix), we can easily draw shapes (pixels, lines) for the icons. Otherwise, we’ll manually map 2D coordinates to the 1D LED array index (considering the zigzag layout of the matrix).
 	•	Accelerometer (QMI8658): Use an Arduino library like QMI8658c or the Waveshare SensorLib ￼ to initialize and read acceleration and gyroscope data. This abstracts I2C reads and provides calibrated values. We might also use basic Vector math on accel readings to detect magnitude.
 	•	Wi-Fi/BLE (if used): Use ESP32 WiFi library (for AP and web server) or NimBLE-Arduino for BLE. These come with the ESP32 framework. We plan a simple HTTP server for status or BLE advertising; no heavy protocols, no cloud dependency.

@@ -93,10 +93,14 @@ When enabled (default), the device hosts http://192.168.4.1 with:
 Portal cards show both the live sensor reading and the pattern currently on the LEDs, plus OTA progress (Idle → Uploading → Ready to reboot).
 
 #### OTA Refresh
-1. Build a release binary with `idf.py build` (or download the signed field image).
-2. Join the `MatrixFluid-Config` network and open the portal.
-3. In **Firmware Update**, pick the `.bin` file and press **Upload & Install**.
-4. Wait for the portal to report *Ready to reboot*. The device restarts automatically after the upload finishes.
+1. Build a fresh image: `idf.py build` (or obtain a trusted, signed `.bin` from CI).
+2. Confirm the new binary’s version (`idf.py size` or `idf.py build && grep "Project name" build/bootloader/log.txt`).
+3. Power the unit, join the `MatrixFluid-Config` SSID, and browse to http://192.168.4.1/.
+4. Scroll to **Firmware Update**, choose the new `.bin`, then click **Upload & Install**. Leave the page open while progress updates.
+5. When the banner changes to *Ready to reboot*, the device will restart (portal drops for ~10 s). If not, tap **LED Status Snapshot** to verify `ota_pending_reboot=false` and reboot manually.
+6. After reconnecting, press **Device Health Snapshot** or curl `/api/health` to ensure the reported `ota_last_error` is `0` and the `status` block shows the updated build ID.
+
+> **Tip:** If you keep a previous image on hand, you can always revert by re-uploading that `.bin` through the same panel.
 
 ## Development
 

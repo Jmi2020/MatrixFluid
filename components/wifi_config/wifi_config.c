@@ -102,12 +102,18 @@ static const char* html_page =
 "<div class='status-card'><span>Periodic Triggers</span><div id='periodic-count' class='status-value'>0</div></div>"
 "<div class='status-card'><span>Uptime</span><div id='uptime' class='status-value'>--</div></div>"
 "<div class='status-card'><span>Connected Clients</span><div id='client-count' class='status-value'>0</div></div>"
+"<div class='status-card'><span>Half Sensor</span><div id='sensor-half' class='status-value'>--</div></div>"
+"<div class='status-card'><span>Empty Sensor</span><div id='sensor-empty' class='status-value'>--</div></div>"
 "</div></section>"
 "<section><h2>Manual Actions</h2>"
 "<button class='btn btn-success' onclick='triggerDisplay()'>Show Fluid Level Now</button>"
 "<div class='switch'><input type='checkbox' id='demo-toggle' onchange='toggleDemo(this.checked)'>"
 "<label for='demo-toggle' style='margin:0;'>Demo Mode<span id='demo-state' class='badge badge-off'>Inactive</span></label></div>"
 "<p class='help'>Enable demo mode for kiosk demonstrations when the USB data link is connected. Disable for normal timed behaviour.</p>"
+"<button class='btn btn-primary' type='button' onclick='requestLedStatus()'>LED Status Snapshot</button>"
+"<p id='led-status' class='help'>LED status: Not requested.</p>"
+"<button class='btn btn-primary' type='button' onclick='requestHealth()'>Device Health Snapshot</button>"
+"<pre id='health-status' class='help' style='white-space:pre-wrap'>Device health not requested yet.</pre>"
 "</section>"
 "<section><h2>Automatic Display Settings</h2><form onsubmit='saveConfig(event)'>"
 "<label for='periodic'>Enable periodic display</label>"
@@ -142,6 +148,8 @@ static const char* html_page =
 "function formatUptime(seconds){if(!seconds)return '--';const hrs=Math.floor(seconds/3600);const mins=Math.floor((seconds%3600)/60);return (hrs?hrs+'h ':'')+mins+'m';}\n"
 "function formatPowerSource(source){if(!source)return '--';const normalized=String(source).toLowerCase();if(normalized.includes('usb'))return 'USB';if(normalized.includes('buck'))return '5V Buck';return source;}\n"
 "function describeOta(data){if(!data)return'--';if(data.ota_pending_reboot)return'Ready to reboot';if(data.ota_in_progress){const pct=data.ota_total_size?(data.ota_bytes_written/data.ota_total_size*100).toFixed(1):'--';return`Uploading ${pct}%`; }if(data.ota_last_error&&data.ota_last_error!==0)return'Error '+data.ota_last_error;return'Idle';}\n"
+"function describeSensor(submerged, signalHigh){if(signalHigh&&submerged)return'Mixed';if(signalHigh&&!submerged)return'DRY (HIGH)';if(!signalHigh&&submerged)return'WET (LOW)';return'SIGNAL LOW';}\n"
+"function sensorClass(submerged, signalHigh){if(signalHigh&&!submerged)return'level-ok';if(!signalHigh&&submerged)return'level-crit';return'level-warn';}\n"
 "function loadStatus(){\n"
 "  fetch('/api/status')\n"
 "    .then(r=>r.json())\n"
@@ -166,6 +174,10 @@ static const char* html_page =
 "      document.getElementById('duration').value=data.config.display_duration_seconds||7;\n"
 "      brightnessInput.value=data.config.display_brightness||3;\n"
 "      document.getElementById('brightness-val').textContent=brightnessInput.value;\n"
+"      const sensorHalf=document.getElementById('sensor-half');\n"
+"      const sensorEmpty=document.getElementById('sensor-empty');\n"
+"      if(sensorHalf){const text=describeSensor(!!data.half_sensor_submerged,!!data.half_sensor_signal_high);sensorHalf.textContent=text;sensorHalf.className='status-value '+sensorClass(!!data.half_sensor_submerged,!!data.half_sensor_signal_high);}\n"
+"      if(sensorEmpty){const text=describeSensor(!!data.empty_sensor_submerged,!!data.empty_sensor_signal_high);sensorEmpty.textContent=text;sensorEmpty.className='status-value '+sensorClass(!!data.empty_sensor_submerged,!!data.empty_sensor_signal_high);}\n"
 "      const demoToggle=document.getElementById('demo-toggle');\n"
 "      if(demoToggle){\n"
 "        const portalRequested=!!data.demo_mode_requested;\n"
@@ -186,6 +198,8 @@ static const char* html_page =
 "function toggleDemo(enabled){fetch('/api/demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enable:!!enabled})}).then(()=>setTimeout(loadStatus,400)).catch(e=>alert('Demo toggle failed: '+e));}\n"
 "function saveConfig(event){event.preventDefault();const config={periodic_display_enabled:document.getElementById('periodic').value==='true',display_interval_seconds:Math.max(60,parseInt(document.getElementById('interval').value||15,10)*60),display_duration_seconds:Math.max(1,parseInt(document.getElementById('duration').value||7,10)),display_brightness:Math.min(5,Math.max(1,parseInt(brightnessInput.value||3,10)))};fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(config)}).then(r=>r.text()).then(msg=>alert('Settings saved! '+msg)).then(()=>setTimeout(loadStatus,400)).catch(e=>alert('Save failed: '+e));}\n"
 "function uploadFirmware(event){event.preventDefault();const fileInput=document.getElementById('ota-file');if(!fileInput||!fileInput.files.length){alert('Select a firmware .bin file first.');return;}const file=fileInput.files[0];const statusEl=document.getElementById('ota-status');statusEl.textContent='Uploading firmware...';fetch('/api/ota',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file}).then(r=>r.text()).then(msg=>{statusEl.textContent=msg||'Upload complete';setTimeout(loadStatus,1000);}).catch(e=>{statusEl.textContent='OTA failed: '+e;});}\n"
+"function requestLedStatus(){fetch('/api/led').then(r=>r.json()).then(data=>{const statusEl=document.getElementById('led-status');if(statusEl){statusEl.textContent=`${data.active?'ACTIVE':'OFF'} - ${data.display_level} (brightness ${data.brightness}, mode ${data.mode}, last ${data.last_trigger})`;}}).catch(e=>alert('LED status failed: '+e));}\n"
+"function requestHealth(){fetch('/api/health').then(r=>r.json()).then(data=>{const healthEl=document.getElementById('health-status');if(healthEl){healthEl.textContent=JSON.stringify(data,null,2);}}).catch(e=>alert('Health check failed: '+e));}\n"
 "loadStatus();setInterval(loadStatus,5000);\n"
 "</script></body></html>";
 
@@ -382,18 +396,16 @@ static esp_err_t get_handler(httpd_req_t *req) {
 /**
  * @brief API handler for status information
  */
-static esp_err_t api_status_handler(httpd_req_t *req) {
+static cJSON *build_status_json(void) {
     cJSON *json = cJSON_CreateObject();
     if (!json) {
-        httpd_resp_send_500(req);
-        return ESP_FAIL;
+        return NULL;
     }
 
     cJSON *config = cJSON_CreateObject();
     if (!config) {
         cJSON_Delete(json);
-        httpd_resp_send_500(req);
-        return ESP_FAIL;
+        return NULL;
     }
 
     display_config_t config_copy = current_display_config;
@@ -411,6 +423,10 @@ static esp_err_t api_status_handler(httpd_req_t *req) {
     cJSON_AddStringToObject(json, "fluid_level", level_str ? level_str : "UNKNOWN");
     const char *display_level_str = fluid_level_to_string(portal_status.displayed_fluid_level);
     cJSON_AddStringToObject(json, "displayed_fluid_level", display_level_str ? display_level_str : "UNKNOWN");
+    cJSON_AddBoolToObject(json, "half_sensor_submerged", portal_status.half_sensor_submerged);
+    cJSON_AddBoolToObject(json, "empty_sensor_submerged", portal_status.empty_sensor_submerged);
+    cJSON_AddBoolToObject(json, "half_sensor_signal_high", portal_status.half_sensor_signal_high);
+    cJSON_AddBoolToObject(json, "empty_sensor_signal_high", portal_status.empty_sensor_signal_high);
     cJSON_AddBoolToObject(json, "display_active", portal_status.display_active);
     cJSON_AddNumberToObject(json, "uptime_seconds", portal_status.uptime_seconds);
     cJSON_AddNumberToObject(json, "next_wake_seconds", portal_status.next_wake_seconds);
@@ -438,6 +454,16 @@ static esp_err_t api_status_handler(httpd_req_t *req) {
     wifi_config_get_status(&clients, ap_ip);
     cJSON_AddNumberToObject(json, "connected_clients", clients);
     cJSON_AddStringToObject(json, "ap_ip", ap_ip);
+
+    return json;
+}
+
+static esp_err_t api_status_handler(httpd_req_t *req) {
+    cJSON *json = build_status_json();
+    if (!json) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
 
     char *json_string = cJSON_PrintUnformatted(json);
     if (!json_string) {
@@ -662,6 +688,95 @@ static esp_err_t api_ota_handler(httpd_req_t *req) {
     ota_state.pending_reboot = true;
     httpd_resp_sendstr(req, "Firmware uploaded. Rebooting...");
     schedule_reboot();
+    return ESP_OK;
+}
+
+static esp_err_t api_led_status_handler(httpd_req_t *req) {
+    cJSON *json = cJSON_CreateObject();
+    if (!json) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    display_controller_config_t cfg;
+    esp_err_t ret = display_controller_get_config(&cfg);
+    if (ret != ESP_OK) {
+        cJSON_Delete(json);
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Display controller not ready");
+        return ret;
+    }
+
+    display_stats_t stats;
+    display_controller_get_stats(&stats);
+
+    cJSON_AddBoolToObject(json, "active", display_controller_is_active());
+    const char *display_level = fluid_level_to_string(display_controller_get_current_level());
+    cJSON_AddStringToObject(json, "display_level", display_level ? display_level : "UNKNOWN");
+    cJSON_AddNumberToObject(json, "brightness", cfg.brightness);
+    cJSON_AddStringToObject(json, "mode", display_controller_mode_to_string(cfg.mode));
+    cJSON_AddNumberToObject(json, "periodic_interval_ms", cfg.periodic_interval_ms);
+    cJSON_AddNumberToObject(json, "display_duration_ms", cfg.display_duration_ms);
+    cJSON_AddBoolToObject(json, "show_startup_sequence", cfg.show_startup_sequence);
+    cJSON_AddBoolToObject(json, "fade_in_out", cfg.fade_in_out);
+    cJSON_AddNumberToObject(json, "total_displays", stats.total_displays);
+    cJSON_AddNumberToObject(json, "manual_triggers", stats.manual_triggers);
+    cJSON_AddNumberToObject(json, "periodic_triggers", stats.periodic_triggers);
+    cJSON_AddNumberToObject(json, "fluid_change_triggers", stats.fluid_change_triggers);
+    cJSON_AddNumberToObject(json, "last_display_time_ms", stats.last_display_time);
+    cJSON_AddStringToObject(json, "last_trigger",
+                            display_controller_trigger_to_string(stats.last_trigger));
+
+    char *payload = cJSON_PrintUnformatted(json);
+    if (!payload) {
+        cJSON_Delete(json);
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, payload, strlen(payload));
+
+    cJSON_free(payload);
+    cJSON_Delete(json);
+    return ESP_OK;
+}
+
+static esp_err_t api_health_handler(httpd_req_t *req) {
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    cJSON *status_json = build_status_json();
+    if (!status_json) {
+        cJSON_Delete(root);
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+    cJSON_AddItemToObject(root, "status", status_json);
+
+    cJSON_AddNumberToObject(root, "uptime_seconds", portal_status.uptime_seconds);
+    cJSON_AddNumberToObject(root, "free_heap_bytes", esp_get_free_heap_size());
+    cJSON_AddNumberToObject(root, "minimum_free_heap_bytes", esp_get_minimum_free_heap_size());
+    cJSON_AddStringToObject(root, "idf_version", esp_get_idf_version());
+    cJSON_AddBoolToObject(root, "ota_in_progress", ota_state.in_progress);
+    cJSON_AddBoolToObject(root, "ota_pending_reboot", ota_state.pending_reboot);
+    cJSON_AddBoolToObject(root, "wifi_initialized", wifi_initialized);
+    cJSON_AddBoolToObject(root, "http_server_running", server_running);
+
+    char *payload = cJSON_PrintUnformatted(root);
+    if (!payload) {
+        cJSON_Delete(root);
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, payload, strlen(payload));
+
+    cJSON_free(payload);
+    cJSON_Delete(root);
     return ESP_OK;
 }
 

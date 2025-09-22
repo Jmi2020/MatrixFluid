@@ -1,6 +1,9 @@
 # ESP-IDF build outputs
 /build/
 
+# External tools
+/awesome-claude-agents/
+
 # Editor directories
 .vscode/
 .idea/

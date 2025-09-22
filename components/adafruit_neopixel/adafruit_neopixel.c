@@ -188,10 +188,10 @@ esp_err_t neopixel_show(neopixel_handle_t handle) {
     for (int i = 0; i < handle->num_pixels; i++) {
         uint32_t color = apply_brightness(handle->pixel_data[i], handle->brightness);
 
-        // WS2812B expects GRB order
-        led_data[i * 3 + 0] = neopixel_color_green(color);  // Green
-        led_data[i * 3 + 1] = neopixel_color_red(color);    // Red
-        led_data[i * 3 + 2] = neopixel_color_blue(color);   // Blue
+        // Waveshare panel expects RGB order
+        led_data[i * 3 + 0] = neopixel_color_red(color);
+        led_data[i * 3 + 1] = neopixel_color_green(color);
+        led_data[i * 3 + 2] = neopixel_color_blue(color);
     }
 
     // Transmit LED data

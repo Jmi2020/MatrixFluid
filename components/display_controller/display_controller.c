@@ -4,6 +4,7 @@
  */
 
 #include <string.h>
+#include <stdio.h>
 #include "display_controller.h"
 #include "led_matrix.h"
 #include "fluid_sensors.h"
@@ -13,6 +14,9 @@
 #include "freertos/task.h"
 
 static const char *TAG = "display_ctrl";
+
+#define ICON_HOLD_MS      1500
+#define SCROLL_STEP_MS     120
 
 // Controller state
 static struct {
@@ -32,6 +36,10 @@ static struct {
     fluid_level_t current_fluid_level;
     fluid_level_t previous_fluid_level;
     uint32_t display_start_time;
+    TaskHandle_t animation_task;
+    led_color_t caption_color;
+    uint8_t caption_brightness;
+    char caption_text[32];
 } g_display_ctrl = {0};
 
 // Forward declarations
@@ -40,6 +48,9 @@ static void display_off_timer_callback(void* arg);
 static esp_err_t activate_display(trigger_source_t source);
 static esp_err_t deactivate_display(void);
 static led_pattern_t fluid_level_to_pattern(fluid_level_t level);
+static void display_animation_task(void *param);
+static void build_caption(fluid_level_t level, char *buffer, size_t len,
+                          led_color_t *color_out);
 
 /**
  * @brief Convert fluid level to LED pattern
@@ -51,6 +62,45 @@ static led_pattern_t fluid_level_to_pattern(fluid_level_t level) {
         case FLUID_LEVEL_NEAR_EMPTY:  return PATTERN_RED_STOP;
         case FLUID_LEVEL_SENSOR_ERROR:
         default:                      return PATTERN_ERROR_BLINK;
+    }
+}
+
+static void build_caption(fluid_level_t level, char *buffer, size_t len,
+                          led_color_t *color_out) {
+    const char *text = "STATUS";
+    led_color_t color = LED_COLOR_GREEN;
+
+    switch (level) {
+        case FLUID_LEVEL_ABOVE_HALF:
+            text = "LEVEL OK";
+            color = LED_COLOR_GREEN;
+            break;
+        case FLUID_LEVEL_BELOW_HALF:
+            text = "LOW LEVEL";
+            color = LED_COLOR_YELLOW;
+            break;
+        case FLUID_LEVEL_NEAR_EMPTY:
+            text = "TANK EMPTY";
+            color = LED_COLOR_RED;
+            break;
+        case FLUID_LEVEL_SENSOR_ERROR:
+        default:
+            text = "SENSOR ERR";
+            color = LED_COLOR_RED;
+            break;
+    }
+
+    if (buffer && len > 0) {
+        snprintf(buffer, len, "%s", text);
+        for (char *p = buffer; *p; ++p) {
+            if (*p >= 'a' && *p <= 'z') {
+                *p = (char)(*p - 32);
+            }
+        }
+    }
+
+    if (color_out) {
+        *color_out = color;
     }
 }
 
@@ -119,6 +169,28 @@ static esp_err_t activate_display(trigger_source_t source) {
         return ret;
     }
 
+    build_caption(g_display_ctrl.current_fluid_level,
+                  g_display_ctrl.caption_text,
+                  sizeof(g_display_ctrl.caption_text),
+                  &g_display_ctrl.caption_color);
+    g_display_ctrl.caption_brightness = g_display_ctrl.config.brightness;
+
+    if (g_display_ctrl.animation_task) {
+        vTaskDelete(g_display_ctrl.animation_task);
+        g_display_ctrl.animation_task = NULL;
+    }
+
+    BaseType_t created = xTaskCreate(display_animation_task,
+                                     "disp_scroll",
+                                     2048,
+                                     NULL,
+                                     4,
+                                     &g_display_ctrl.animation_task);
+    if (created != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create display animation task");
+        g_display_ctrl.animation_task = NULL;
+    }
+
     // Start display off timer
     if (g_display_ctrl.config.display_duration_ms > 0) {
         esp_timer_start_once(g_display_ctrl.display_off_timer,
@@ -154,6 +226,60 @@ static esp_err_t deactivate_display(void) {
 
     ESP_LOGI(TAG, "Display deactivated");
     return ret;
+}
+
+static void display_animation_task(void *param) {
+    (void)param;
+
+    const TickType_t hold_ticks = pdMS_TO_TICKS(ICON_HOLD_MS);
+    if (hold_ticks > 0) {
+        vTaskDelay(hold_ticks);
+    }
+
+    if (!g_display_ctrl.display_active) {
+        g_display_ctrl.animation_task = NULL;
+        vTaskDelete(NULL);
+    }
+
+    int text_width = led_matrix_measure_text(g_display_ctrl.caption_text);
+    if (text_width <= 0) {
+        g_display_ctrl.animation_task = NULL;
+        vTaskDelete(NULL);
+    }
+
+    bool scrolling = text_width > LED_MATRIX_WIDTH;
+    int16_t offset = scrolling
+        ? LED_MATRIX_WIDTH
+        : (int16_t)((LED_MATRIX_WIDTH - text_width) / 2);
+
+    const TickType_t step_ticks = pdMS_TO_TICKS(SCROLL_STEP_MS);
+
+    while (g_display_ctrl.display_active) {
+        esp_err_t err = led_matrix_draw_text_frame(g_display_ctrl.caption_text,
+                                                   offset,
+                                                   g_display_ctrl.caption_color,
+                                                   g_display_ctrl.caption_brightness);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to draw text frame: %s", esp_err_to_name(err));
+            break;
+        }
+
+        if (scrolling) {
+            offset--;
+            if (offset < -text_width) {
+                offset = LED_MATRIX_WIDTH;
+            }
+        }
+
+        if (step_ticks > 0) {
+            vTaskDelay(step_ticks);
+        } else {
+            taskYIELD();
+        }
+    }
+
+    g_display_ctrl.animation_task = NULL;
+    vTaskDelete(NULL);
 }
 
 esp_err_t display_controller_init(const display_controller_config_t *config) {
@@ -277,6 +403,10 @@ esp_err_t display_controller_stop(void) {
 
     // Clear display
     deactivate_display();
+
+    while (g_display_ctrl.animation_task) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 
     ESP_LOGI(TAG, "Display controller stopped");
     return ESP_OK;

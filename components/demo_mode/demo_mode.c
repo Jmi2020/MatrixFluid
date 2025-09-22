@@ -4,13 +4,14 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include "demo_mode.h"
+#include "fluid_sensors.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/timers.h"
 #include "driver/usb_serial_jtag.h"
 
 // Component includes
@@ -26,14 +27,16 @@ static struct {
     power_source_t power_source;
     uint32_t last_check_time;
     uint32_t demo_start_time;
-    TimerHandle_t demo_timer;
     bool demo_active;
     bool auto_requested;
+    TaskHandle_t demo_task;
 } g_demo = {0};
 
 // Forward declarations
-static void demo_timer_callback(TimerHandle_t timer);
 static esp_err_t detect_power_source(void);
+static void demo_task(void *arg);
+static void show_demo_state(fluid_level_t level, const char *caption,
+                            led_color_t color);
 
 static esp_err_t detect_power_source(void) {
     power_source_t previous = g_demo.power_source;
@@ -54,63 +57,6 @@ static esp_err_t detect_power_source(void) {
     }
 
     return ESP_OK;
-}
-
-/**
- * @brief Demo timer callback for animations
- */
-static void demo_timer_callback(TimerHandle_t timer) {
-    if (!g_demo.demo_active) {
-        return;
-    }
-
-    static uint8_t demo_step = 0;
-    esp_err_t ret = ESP_OK;
-
-    switch (demo_step) {
-        case 0:
-            // Show USB power indicator
-            ret = led_matrix_show_pattern(PATTERN_DEMO_USB, LED_DEFAULT_BRIGHTNESS);
-            ESP_LOGI(TAG, "Demo: Showing USB power indicator");
-            break;
-
-        case 1:
-            // Show pin assignments
-            ret = led_matrix_show_pattern(PATTERN_DEMO_PINS, LED_DEFAULT_BRIGHTNESS);
-            ESP_LOGI(TAG, "Demo: Showing pin assignments");
-            break;
-
-        case 2:
-            // Demo fluid OK state
-            ret = led_matrix_show_pattern(PATTERN_DEMO_FLUID_OK, LED_DEFAULT_BRIGHTNESS);
-            ESP_LOGI(TAG, "Demo: Fluid OK animation");
-            break;
-
-        case 3:
-            // Demo fluid low state
-            ret = led_matrix_show_pattern(PATTERN_DEMO_FLUID_LOW, LED_DEFAULT_BRIGHTNESS);
-            ESP_LOGI(TAG, "Demo: Fluid low animation");
-            break;
-
-        case 4:
-            // Demo fluid critical state
-            ret = led_matrix_show_pattern(PATTERN_DEMO_FLUID_CRITICAL, LED_DEFAULT_BRIGHTNESS);
-            ESP_LOGI(TAG, "Demo: Fluid critical animation");
-            break;
-
-        default:
-            demo_step = 0;
-            return;
-    }
-
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Demo animation failed: %s", esp_err_to_name(ret));
-    }
-
-    demo_step++;
-    if (demo_step > 4) {
-        demo_step = 0;
-    }
 }
 
 esp_err_t demo_mode_init(const demo_config_t *config) {
@@ -134,20 +80,7 @@ esp_err_t demo_mode_init(const demo_config_t *config) {
     g_demo.demo_start_time = 0;
     g_demo.demo_active = false;
     g_demo.auto_requested = false;
-
-    // Create demo timer
-    g_demo.demo_timer = xTimerCreate(
-        "demo_timer",
-        pdMS_TO_TICKS(DEMO_ANIMATION_INTERVAL_MS),
-        pdTRUE,  // Auto-reload
-        NULL,
-        demo_timer_callback
-    );
-
-    if (!g_demo.demo_timer) {
-        ESP_LOGE(TAG, "Failed to create demo timer");
-        return ESP_ERR_NO_MEM;
-    }
+    g_demo.demo_task = NULL;
 
     g_demo.initialized = true;
     ESP_LOGI(TAG, "Demo mode initialized");
@@ -221,20 +154,23 @@ esp_err_t demo_mode_start(void) {
     ESP_LOGI(TAG, "Starting demo mode");
     g_demo.demo_active = true;
     g_demo.demo_start_time = xTaskGetTickCount() * portTICK_PERIOD_MS;
-    g_demo.state = DEMO_MODE_SHOW_PINS;
 
-    // Start with pin assignment display
-    esp_err_t ret = led_matrix_show_pattern(PATTERN_DEMO_PINS, LED_DEFAULT_BRIGHTNESS);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to show pin assignments: %s", esp_err_to_name(ret));
-        return ret;
+    if (g_demo.demo_task) {
+        vTaskDelete(g_demo.demo_task);
+        g_demo.demo_task = NULL;
     }
 
-    // Start demo timer for animations
-    if (xTimerStart(g_demo.demo_timer, pdMS_TO_TICKS(100)) != pdPASS) {
-        ESP_LOGE(TAG, "Failed to start demo timer");
+    BaseType_t created = xTaskCreate(demo_task,
+                                     "demo_loop",
+                                     3072,
+                                     NULL,
+                                     4,
+                                     &g_demo.demo_task);
+    if (created != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create demo loop task");
+        g_demo.demo_task = NULL;
         g_demo.demo_active = false;
-        return ESP_FAIL;
+        return ESP_ERR_NO_MEM;
     }
 
     return ESP_OK;
@@ -246,15 +182,15 @@ esp_err_t demo_mode_stop(void) {
     }
 
     ESP_LOGI(TAG, "Stopping demo mode");
-
-    // Stop timer
-    xTimerStop(g_demo.demo_timer, pdMS_TO_TICKS(100));
-
-    // Clear display
-    led_matrix_clear();
-
     g_demo.demo_active = false;
     g_demo.state = DEMO_MODE_DISABLED;
+
+    if (g_demo.demo_task) {
+        vTaskDelete(g_demo.demo_task);
+        g_demo.demo_task = NULL;
+    }
+
+    led_matrix_clear();
 
     return ESP_OK;
 }
@@ -298,4 +234,77 @@ void demo_mode_print_status(void) {
         printf("Demo Runtime: %lu ms\n", runtime);
     }
     printf("\n");
+}
+
+static void show_demo_state(fluid_level_t level, const char *caption,
+                            led_color_t color) {
+    if (!g_demo.demo_active) {
+        return;
+    }
+
+    led_pattern_t pattern = PATTERN_RED_STOP;
+    switch (level) {
+        case FLUID_LEVEL_ABOVE_HALF:
+            pattern = PATTERN_GREEN_CHECK;
+            break;
+        case FLUID_LEVEL_BELOW_HALF:
+            pattern = PATTERN_YELLOW_WARN;
+            break;
+        case FLUID_LEVEL_NEAR_EMPTY:
+        default:
+            pattern = PATTERN_RED_STOP;
+            break;
+    }
+
+    led_matrix_show_pattern(pattern, LED_DEFAULT_BRIGHTNESS);
+    vTaskDelay(pdMS_TO_TICKS(1500));
+
+    int width = led_matrix_measure_text(caption);
+    bool scrolling = width > LED_MATRIX_WIDTH;
+    int16_t offset = scrolling ? LED_MATRIX_WIDTH : (LED_MATRIX_WIDTH - width) / 2;
+    const TickType_t step = pdMS_TO_TICKS(120);
+
+    if (!scrolling) {
+        led_matrix_draw_text_frame(caption, offset, color, LED_DEFAULT_BRIGHTNESS);
+        vTaskDelay(pdMS_TO_TICKS(800));
+        return;
+    }
+
+    while (g_demo.demo_active) {
+        led_matrix_draw_text_frame(caption, offset, color, LED_DEFAULT_BRIGHTNESS);
+        vTaskDelay(step);
+        offset--;
+        if (offset < -width) {
+            break;
+        }
+    }
+}
+
+static void demo_task(void *arg) {
+    (void)arg;
+
+    const TickType_t pause_ticks = pdMS_TO_TICKS(60000);
+
+    while (g_demo.demo_active) {
+        g_demo.state = DEMO_MODE_ANIMATE;
+        for (int cycle = 0; cycle < 2 && g_demo.demo_active; ++cycle) {
+            show_demo_state(FLUID_LEVEL_ABOVE_HALF, "LEVEL OK", LED_COLOR_GREEN);
+            show_demo_state(FLUID_LEVEL_BELOW_HALF, "LOW LEVEL", LED_COLOR_YELLOW);
+            show_demo_state(FLUID_LEVEL_NEAR_EMPTY, "TANK EMPTY", LED_COLOR_RED);
+        }
+
+        if (!g_demo.demo_active) {
+            break;
+        }
+
+        g_demo.state = DEMO_MODE_USB_POWER;
+        led_matrix_clear();
+        vTaskDelay(pause_ticks);
+    }
+
+    led_matrix_clear();
+    g_demo.demo_task = NULL;
+    g_demo.demo_active = false;
+    g_demo.state = DEMO_MODE_DISABLED;
+    vTaskDelete(NULL);
 }

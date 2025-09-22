@@ -66,6 +66,11 @@ extern const led_color_t LED_COLOR_YELLOW;
 extern const led_color_t LED_COLOR_RED;
 extern const led_color_t LED_COLOR_OFF;
 
+int led_matrix_measure_text(const char *text);
+
+esp_err_t led_matrix_draw_text_frame(const char *text, int16_t offset_x,
+                                     led_color_t color, uint8_t brightness);
+
 /**
  * @brief Initialize LED matrix driver
  *

@@ -26,9 +26,9 @@ ESP32-S3-Matrix Board
 │                     │
 │  [USB-C Port]       │
 │                     │
-│  GPIO2 ←── Half Sensor (NO contact to GND)
-│  GPIO3 ←── Empty Sensor (NO contact to GND)
-│  GND   ←── Sensor Common
+│  GPIO2 ←── Half Sensor (NO contact to 3V3)
+│  GPIO3 ←── Empty Sensor (NO contact to 3V3)
+│  3V3  ←── Sensor Common
 │                     │
 │  5V    ←── Buck Converter Output (+5V)
 │  GND   ←── Buck Converter Ground
@@ -49,10 +49,10 @@ Vehicle Power
 ```
 
 ### Sensor Connection
-1. Connect half-full sensor between GPIO2 and GND
-2. Connect near-empty sensor between GPIO3 and GND
+1. Connect half-full sensor between GPIO2 and 3V3
+2. Connect near-empty sensor between GPIO3 and 3V3
 3. Sensors should be normally open (NO) switches
-4. When fluid present, switch closes (pulls GPIO to GND)
+4. When fluid is present, the switch closes and drives the GPIO high (3V3)
 
 ## Software Installation
 
@@ -115,9 +115,9 @@ Simulate fluid levels using jumper wires:
 
 | Test Case | GPIO2 (Half) | GPIO3 (Empty) | Expected Display |
 |-----------|--------------|---------------|-----------------|
-| Tank Full | Open | Open | Green checkmark |
-| Tank Half | Connected to GND | Open | Yellow caution |
-| Tank Empty | Connected to GND | Connected to GND | Red stop sign |
+| Tank Full | Connected to 3V3 | Connected to 3V3 | Green checkmark |
+| Tank Half | Open | Connected to 3V3 | Yellow caution |
+| Tank Empty | Open | Open | Red stop sign |
 
 ### 3. Scheduler Test
 1. Allow the device to idle until the configured interval elapses (default 15 minutes).

@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "MatrixFluid",
-    "project_version":    "41198a3-dirty",
+    "project_version":    "8bba8c1-dirty",
     "project_path":       "/Users/silverlinings/Desktop/Coding/MatrixFluid",
     "idf_path":           "/Users/silverlinings/esp/v5.5/esp-idf",
     "build_dir":          "/Users/silverlinings/Desktop/Coding/MatrixFluid/build",

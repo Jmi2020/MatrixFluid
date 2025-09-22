@@ -206,10 +206,10 @@ static void publish_portal_status_snapshot(void) {
     status.fluid_level = g_system.current_fluid_level;
     status.displayed_fluid_level = display_controller_get_current_level();
     if (raw_valid) {
-        status.half_sensor_submerged = raw_reading.half_sensor;
-        status.empty_sensor_submerged = raw_reading.empty_sensor;
-        status.half_sensor_signal_high = !raw_reading.half_sensor;
-        status.empty_sensor_signal_high = !raw_reading.empty_sensor;
+        status.half_sensor_submerged = raw_reading.half_sensor_submerged;
+        status.empty_sensor_submerged = raw_reading.empty_sensor_submerged;
+        status.half_sensor_signal_high = raw_reading.half_sensor_signal_high;
+        status.empty_sensor_signal_high = raw_reading.empty_sensor_signal_high;
     }
     status.display_active = display_controller_is_active();
     status.uptime_seconds = (uint32_t)(esp_timer_get_time() / 1000000ULL);

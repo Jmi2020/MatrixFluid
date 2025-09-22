@@ -36,15 +36,15 @@ static struct {
 /**
  * @brief Determine fluid level from sensor readings
  */
-static fluid_level_t determine_level(bool half_sensor, bool empty_sensor) {
-    if (half_sensor && empty_sensor) {
+static fluid_level_t determine_level(bool half_submerged, bool empty_submerged) {
+    if (half_submerged && empty_submerged) {
         return FLUID_LEVEL_ABOVE_HALF;
-    } else if (!half_sensor && empty_sensor) {
+    } else if (!half_submerged && empty_submerged) {
         return FLUID_LEVEL_BELOW_HALF;
-    } else if (!half_sensor && !empty_sensor) {
+    } else if (!half_submerged && !empty_submerged) {
         return FLUID_LEVEL_NEAR_EMPTY;
     } else {
-        // half_sensor == true && empty_sensor == false
+        // half_submerged == true && empty_submerged == false
         // This is physically impossible - empty sensor should be HIGH if half sensor is HIGH
         return FLUID_LEVEL_SENSOR_ERROR;
     }
@@ -64,7 +64,8 @@ static void fluid_monitor_task(void *pvParameters) {
         esp_err_t ret = fluid_sensors_read_raw(&reading);
 
         if (ret == ESP_OK && reading.is_valid) {
-            fluid_level_t new_level = determine_level(reading.half_sensor, reading.empty_sensor);
+            fluid_level_t new_level = determine_level(reading.half_sensor_submerged,
+                                                     reading.empty_sensor_submerged);
 
             if (xSemaphoreTake(fluid_state.mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
                 if (new_level != fluid_state.current_level) {
@@ -132,8 +133,8 @@ esp_err_t fluid_sensors_init(const fluid_config_t *config) {
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << FLUID_HALF_SENSOR_GPIO) | (1ULL << FLUID_EMPTY_SENSOR_GPIO),
         .mode = GPIO_MODE_INPUT,
-        .pull_up_en = GPIO_PULLUP_ENABLE,   // Enable pull-up for open-drain sensors
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_ENABLE,  // Bias low until sensor drives line high
         .intr_type = GPIO_INTR_DISABLE,
     };
     ESP_GOTO_ON_ERROR(gpio_config(&io_conf), cleanup, TAG, "GPIO config failed");
@@ -155,7 +156,8 @@ esp_err_t fluid_sensors_init(const fluid_config_t *config) {
     fluid_reading_t initial_reading;
     ret = fluid_sensors_read_raw(&initial_reading);
     if (ret == ESP_OK && initial_reading.is_valid) {
-        fluid_state.stable_level = determine_level(initial_reading.half_sensor, initial_reading.empty_sensor);
+        fluid_state.stable_level = determine_level(initial_reading.half_sensor_submerged,
+                                                   initial_reading.empty_sensor_submerged);
         fluid_state.current_level = fluid_state.stable_level;
         fluid_state.level_change_time_ms = initial_reading.timestamp_ms;
     }
@@ -199,9 +201,11 @@ esp_err_t fluid_sensors_read_raw(fluid_reading_t *reading) {
     int half_raw = gpio_get_level(FLUID_HALF_SENSOR_GPIO);
     int empty_raw = gpio_get_level(FLUID_EMPTY_SENSOR_GPIO);
 
-    // Floats pull the line low when liquid is present; convert to bool accordingly.
-    reading->half_sensor = (half_raw == 0);
-    reading->empty_sensor = (empty_raw == 0);
+    // Floats drive the line HIGH (~3V) when liquid is present.
+    reading->half_sensor_signal_high = (half_raw != 0);
+    reading->empty_sensor_signal_high = (empty_raw != 0);
+    reading->half_sensor_submerged = reading->half_sensor_signal_high;
+    reading->empty_sensor_submerged = reading->empty_sensor_signal_high;
     reading->timestamp_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
     reading->is_valid = true;
 

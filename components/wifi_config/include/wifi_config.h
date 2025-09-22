@@ -58,8 +58,8 @@ typedef struct {
     fluid_level_t displayed_fluid_level;///< Level currently shown on matrix
     bool half_sensor_submerged;         ///< Half sensor indicates liquid
     bool empty_sensor_submerged;        ///< Empty sensor indicates liquid
-    bool half_sensor_signal_high;       ///< Half sensor GPIO high (dry/open)
-    bool empty_sensor_signal_high;      ///< Empty sensor GPIO high (dry/open)
+    bool half_sensor_signal_high;       ///< Half sensor GPIO driven HIGH (~3V)
+    bool empty_sensor_signal_high;      ///< Empty sensor GPIO driven HIGH (~3V)
     bool display_active;                ///< Display currently illuminated
     uint32_t uptime_seconds;            ///< Device uptime in seconds
     uint32_t total_display_count;       ///< Total displays shown

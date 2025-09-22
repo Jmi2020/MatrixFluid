@@ -39,8 +39,8 @@ A safety-critical embedded device for monitoring vehicle fluid levels using the 
 
 1. **Hardware Setup**
    ```
-   GPIO2 ← Half-full sensor (NO switch to GND)
-   GPIO3 ← Near-empty sensor (NO switch to GND)
+   GPIO2 ← Half-full sensor (NO switch to 3V3)
+   GPIO3 ← Near-empty sensor (NO switch to 3V3)
    5V ← Buck converter output
    GND ← Common ground
    ```

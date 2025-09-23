@@ -13,6 +13,7 @@
 #include "esp_err.h"
 #include "fluid_sensors.h"
 #include "demo_mode.h"
+#include "alerts.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,6 +24,10 @@ extern "C" {
 #define WIFI_AP_PASSWORD        "fluid123"
 #define WIFI_AP_CHANNEL         1
 #define WIFI_AP_MAX_CONNECTIONS 4
+
+// WiFi STA Configuration Limits
+#define WIFI_STA_MAX_SSID_LEN    32
+#define WIFI_STA_MAX_PASS_LEN    64
 
 // HTTP Server Configuration
 #define HTTP_SERVER_PORT        80
@@ -76,7 +81,27 @@ typedef struct {
     uint32_t ota_total_size;            ///< OTA expected size (bytes)
     bool ota_pending_reboot;            ///< OTA completed and reboot scheduled
     esp_err_t ota_last_error;           ///< Last OTA error code
+    alert_portal_status_t alerts;       ///< Alert scheduler snapshot
+    bool sta_enabled;                   ///< STA connection requested
+    bool sta_has_credentials;           ///< Stored credentials available
+    bool sta_connecting;                ///< STA attempting to connect
+    bool sta_connected;                 ///< STA currently connected
+    char sta_ssid[WIFI_STA_MAX_SSID_LEN + 1]; ///< Stored STA SSID (if any)
+    char sta_ip[16];                    ///< STA IPv4 string
+    int sta_last_disconnect_reason;     ///< Last disconnect reason code
+    char sta_last_error[64];            ///< Last STA error message
 } wifi_portal_status_t;
+
+typedef struct {
+    bool enabled;                       ///< STA connection requested
+    bool has_credentials;               ///< Credentials saved in NVS
+    bool connecting;                    ///< STA currently trying to connect
+    bool connected;                     ///< STA has active connection
+    char ssid[WIFI_STA_MAX_SSID_LEN + 1]; ///< Saved SSID (if any)
+    char ip[16];                        ///< Current STA IPv4 (if connected)
+    int last_disconnect_reason;         ///< Last disconnect reason code
+    char last_error[64];                ///< Last recorded error string
+} wifi_sta_status_t;
 
 /**
  * @brief Update portal status snapshot
@@ -152,6 +177,11 @@ esp_err_t wifi_config_trigger_display(void);
  * @return esp_err_t ESP_OK on success
  */
 esp_err_t wifi_config_get_status(uint8_t *connected_clients, char *ap_ip);
+
+/**
+ * @brief Get current STA connection status
+ */
+esp_err_t wifi_config_get_sta_status(wifi_sta_status_t *status_out);
 
 /**
  * @brief Print WiFi configuration info

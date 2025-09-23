@@ -76,7 +76,7 @@ static void build_caption(fluid_level_t level, char *buffer, size_t len,
             color = LED_COLOR_GREEN;
             break;
         case FLUID_LEVEL_BELOW_HALF:
-            text = "LOW LEVEL";
+            text = "BELOW HALF";
             color = LED_COLOR_YELLOW;
             break;
         case FLUID_LEVEL_NEAR_EMPTY:

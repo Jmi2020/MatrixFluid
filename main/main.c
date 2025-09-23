@@ -39,6 +39,7 @@
 #include "display_controller.h"
 #include "wifi_config.h"
 #include "demo_mode.h"
+#include "alerts.h"
 
 static const char *TAG = "matrixfluid";
 
@@ -221,6 +222,23 @@ static void publish_portal_status_snapshot(void) {
     status.auto_demo_requested = g_system.auto_demo_requested;
     status.power_source = demo_mode_get_power_source();
 
+    alert_snapshot_t alert_snapshot = {
+        .fluid_level = status.fluid_level,
+        .half_submerged = status.half_sensor_submerged,
+        .empty_submerged = status.empty_sensor_submerged,
+        .half_signal_high = status.half_sensor_signal_high,
+        .empty_signal_high = status.empty_sensor_signal_high,
+        .uptime_seconds = status.uptime_seconds,
+    };
+    const char *power_label = demo_mode_power_source_to_string(status.power_source);
+    if (power_label) {
+        strncpy(alert_snapshot.power_source, power_label, sizeof(alert_snapshot.power_source) - 1);
+        alert_snapshot.power_source[sizeof(alert_snapshot.power_source) - 1] = '\0';
+    }
+    alerts_update_snapshot(&alert_snapshot);
+
+    alerts_get_portal_status(&status.alerts);
+
     display_config_t portal_config;
     if (wifi_config_get_display_config(&portal_config) == ESP_OK) {
         status.display_config = portal_config;
@@ -274,6 +292,32 @@ static void system_monitor_task(void *pvParameters) {
                  display_stats.total_displays,
                  g_system.total_web_triggers,
                  fluid_sensors_get_error_count());
+
+        uint8_t ap_clients = 0;
+        char ap_ip[16] = "0.0.0.0";
+        wifi_config_get_status(&ap_clients, ap_ip);
+
+        wifi_sta_status_t sta_status = {0};
+        if (wifi_config_get_sta_status(&sta_status) == ESP_OK) {
+            const char *sta_state = "Disabled";
+            if (sta_status.connected) {
+                sta_state = "Connected";
+            } else if (sta_status.connecting) {
+                sta_state = "Connecting";
+            } else if (sta_status.enabled) {
+                sta_state = sta_status.has_credentials ? "Enabled" : "Enabled (no creds)";
+            }
+
+            ESP_LOGI(TAG,
+                     "WiFi AP IP=%s Clients=%u | STA %s SSID=%s IP=%s%s%s",
+                     ap_ip,
+                     ap_clients,
+                     sta_state,
+                     sta_status.ssid[0] ? sta_status.ssid : "--",
+                     sta_status.ip[0] ? sta_status.ip : "--",
+                     sta_status.last_error[0] ? " Error=" : "",
+                     sta_status.last_error[0] ? sta_status.last_error : "");
+        }
 
         publish_portal_status_snapshot();
 
@@ -407,6 +451,8 @@ void app_main(void) {
     } else {
         ESP_LOGI(TAG, "Demo mode detection initialized");
     }
+
+    alerts_init();
 
     // Register callbacks
     if (fluid_sensors_register_callback(fluid_level_changed_callback, NULL) == ESP_OK) {

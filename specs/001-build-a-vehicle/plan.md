@@ -105,6 +105,9 @@ README.md                # User documentation
 ## Complexity Tracking
 - No deviations – scope simplified versus original gesture plan.
 
+## Requirement Completion Log
+- 2025-09-23: Implemented Wi-Fi STA portal management and alert email templating (components/wifi_config, main/main.c). Portal now reports connection state, supports STA credentials, and provides mailto-based alert composition.
+
 ## Progress Tracking
 - [x] Phase 0: Research complete
 - [x] Phase 1: Design artifacts ready
@@ -118,4 +121,3 @@ README.md                # User documentation
 - [x] Post-Design Constitution Check: PASS
 - [x] All clarifications documented
 - [ ] Tasks executed
-

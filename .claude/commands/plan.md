@@ -33,4 +33,6 @@ Given the implementation details provided as an argument, do this:
 
 6. Report results with branch name, file paths, and generated artifacts.
 
+7. Append a brief completion note to `specs/<feature>/plan.md` under the "Requirement Completion Log" section so collaborators can trace which requirements were satisfied.
+
 Use absolute paths with the repository root for all file operations to avoid path issues.

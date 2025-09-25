@@ -7,6 +7,8 @@
 # Editor directories
 .vscode/
 .idea/
+.claude/
+.codex/
 
 # Python cache
 __pycache__/
@@ -15,6 +17,9 @@ __pycache__/
 # Logs and temporary files
 *.log
 *.tmp
+
+# Planning artifacts (keep local only)
+specs/*/plan.md
 
 # ESP-IDF config backups
 sdkconfig.old

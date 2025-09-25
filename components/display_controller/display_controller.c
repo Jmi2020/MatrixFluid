@@ -166,6 +166,7 @@ static esp_err_t activate_display(trigger_source_t source) {
              display_controller_trigger_to_string(source),
              fluid_level_to_string(g_display_ctrl.current_fluid_level),
              pattern);
+    ESP_LOGI(TAG, "Caption seed before build: brightness=%d", g_display_ctrl.config.brightness);
 
     // Show pattern with configured brightness
     esp_err_t ret = led_matrix_show_pattern(pattern, g_display_ctrl.config.brightness);
@@ -180,6 +181,11 @@ static esp_err_t activate_display(trigger_source_t source) {
                   sizeof(g_display_ctrl.caption_text),
                   &g_display_ctrl.caption_color);
     g_display_ctrl.caption_brightness = g_display_ctrl.config.brightness;
+    ESP_LOGI(TAG, "Caption prepared: '%s', color=(%u,%u,%u)",
+             g_display_ctrl.caption_text,
+             g_display_ctrl.caption_color.r,
+             g_display_ctrl.caption_color.g,
+             g_display_ctrl.caption_color.b);
 
     if (g_display_ctrl.animation_task) {
         vTaskDelete(g_display_ctrl.animation_task);
@@ -280,6 +286,13 @@ static void display_animation_task(void *param) {
 
     const TickType_t step_ticks = pdMS_TO_TICKS(SCROLL_STEP_MS);
 
+    ESP_LOGI(TAG,
+             "Caption scroll start: text='%s', width=%d, scrolling=%s, brightness=%d",
+             g_display_ctrl.caption_text,
+             text_width,
+             scrolling ? "yes" : "no",
+             g_display_ctrl.caption_brightness);
+
     while (g_display_ctrl.display_active) {
         esp_err_t err = led_matrix_draw_text_frame(g_display_ctrl.caption_text,
                                                    offset,
@@ -287,6 +300,7 @@ static void display_animation_task(void *param) {
                                                    g_display_ctrl.caption_brightness);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to draw text frame: %s", esp_err_to_name(err));
+            ESP_LOGE(TAG, "Caption text '%s', offset=%d", g_display_ctrl.caption_text, offset);
             break;
         }
 

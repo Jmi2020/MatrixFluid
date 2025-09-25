@@ -17,6 +17,7 @@ static const char *TAG = "display_ctrl";
 
 #define ICON_HOLD_MS      1500
 #define SCROLL_STEP_MS     120
+#define DISPLAY_ANIMATION_TASK_STACK_WORDS 1024
 
 // Controller state
 static struct {
@@ -40,6 +41,10 @@ static struct {
     led_color_t caption_color;
     uint8_t caption_brightness;
     char caption_text[32];
+#if (configSUPPORT_STATIC_ALLOCATION == 1)
+    StaticTask_t animation_tcb;
+    StackType_t animation_stack[DISPLAY_ANIMATION_TASK_STACK_WORDS];
+#endif
 } g_display_ctrl = {0};
 
 // Forward declarations
@@ -51,6 +56,7 @@ static led_pattern_t fluid_level_to_pattern(fluid_level_t level);
 static void display_animation_task(void *param);
 static void build_caption(fluid_level_t level, char *buffer, size_t len,
                           led_color_t *color_out);
+static void draw_caption_snapshot(void);
 
 /**
  * @brief Convert fluid level to LED pattern
@@ -180,15 +186,35 @@ static esp_err_t activate_display(trigger_source_t source) {
         g_display_ctrl.animation_task = NULL;
     }
 
-    BaseType_t created = xTaskCreate(display_animation_task,
-                                     "disp_scroll",
-                                     2048,
-                                     NULL,
-                                     4,
-                                     &g_display_ctrl.animation_task);
-    if (created != pdPASS) {
-        ESP_LOGE(TAG, "Failed to create display animation task");
-        g_display_ctrl.animation_task = NULL;
+    TaskHandle_t animation_handle = NULL;
+
+#if (configSUPPORT_STATIC_ALLOCATION == 1)
+    animation_handle = xTaskCreateStatic(display_animation_task,
+                                         "disp_scroll",
+                                         DISPLAY_ANIMATION_TASK_STACK_WORDS,
+                                         NULL,
+                                         4,
+                                         g_display_ctrl.animation_stack,
+                                         &g_display_ctrl.animation_tcb);
+#endif
+
+    if (animation_handle == NULL) {
+        BaseType_t created = xTaskCreate(display_animation_task,
+                                         "disp_scroll",
+                                         2048,
+                                         NULL,
+                                         4,
+                                         &animation_handle);
+        if (created != pdPASS) {
+            ESP_LOGE(TAG, "Failed to create display animation task");
+            animation_handle = NULL;
+        }
+    }
+
+    if (animation_handle) {
+        g_display_ctrl.animation_task = animation_handle;
+    } else {
+        draw_caption_snapshot();
     }
 
     // Start display off timer
@@ -280,6 +306,25 @@ static void display_animation_task(void *param) {
 
     g_display_ctrl.animation_task = NULL;
     vTaskDelete(NULL);
+}
+
+static void draw_caption_snapshot(void) {
+    int text_width = led_matrix_measure_text(g_display_ctrl.caption_text);
+    if (text_width <= 0) {
+        return;
+    }
+
+    int16_t offset = (text_width > LED_MATRIX_WIDTH)
+        ? 0
+        : (int16_t)((LED_MATRIX_WIDTH - text_width) / 2);
+
+    esp_err_t err = led_matrix_draw_text_frame(g_display_ctrl.caption_text,
+                                               offset,
+                                               g_display_ctrl.caption_color,
+                                               g_display_ctrl.caption_brightness);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Fallback caption draw failed: %s", esp_err_to_name(err));
+    }
 }
 
 esp_err_t display_controller_init(const display_controller_config_t *config) {

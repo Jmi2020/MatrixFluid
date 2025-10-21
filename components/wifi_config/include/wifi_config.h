@@ -34,6 +34,9 @@ extern "C" {
 #define MAX_HTTP_RESPONSE_SIZE  2048
 #define MAX_HTTP_REQUEST_SIZE   1024
 
+// Remote log streaming configuration
+#define LOG_STREAM_HOST_MAX_LEN 64
+
 /**
  * @brief Display configuration structure
  */
@@ -47,12 +50,22 @@ typedef struct {
 } display_config_t;
 
 /**
+ * @brief Remote log streaming configuration
+ */
+typedef struct {
+    bool enable_udp_sink;                         ///< Enable UDP log streaming
+    char udp_host[LOG_STREAM_HOST_MAX_LEN];       ///< Target host or IPv4 address
+    uint16_t udp_port;                            ///< Destination UDP port
+} log_stream_config_t;
+
+/**
  * @brief WiFi configuration initialization parameters
  */
 typedef struct {
     bool enable_ap;                     ///< Enable WiFi AP
     bool enable_web_server;             ///< Enable HTTP server
     display_config_t default_display;   ///< Default display settings
+    log_stream_config_t log_stream;     ///< Remote log streaming defaults
 } wifi_config_init_t;
 
 /**
@@ -61,9 +74,13 @@ typedef struct {
 typedef struct {
     fluid_level_t fluid_level;          ///< Latest fluid level
     fluid_level_t displayed_fluid_level;///< Level currently shown on matrix
+    bool full_sensor_submerged;         ///< Full sensor indicates liquid
     bool half_sensor_submerged;         ///< Half sensor indicates liquid
+    bool low_sensor_submerged;          ///< Lower-mid sensor indicates liquid
     bool empty_sensor_submerged;        ///< Empty sensor indicates liquid
+    bool full_sensor_signal_high;       ///< Full sensor GPIO driven HIGH (~3V)
     bool half_sensor_signal_high;       ///< Half sensor GPIO driven HIGH (~3V)
+    bool low_sensor_signal_high;        ///< Lower-mid sensor GPIO driven HIGH (~3V)
     bool empty_sensor_signal_high;      ///< Empty sensor GPIO driven HIGH (~3V)
     bool display_active;                ///< Display currently illuminated
     uint32_t uptime_seconds;            ///< Device uptime in seconds
@@ -90,6 +107,11 @@ typedef struct {
     char sta_ip[16];                    ///< STA IPv4 string
     int sta_last_disconnect_reason;     ///< Last disconnect reason code
     char sta_last_error[64];            ///< Last STA error message
+    bool log_stream_enabled;            ///< Remote log streaming enabled
+    bool log_stream_active;             ///< Destination reachable and socket ready
+    char log_stream_host[LOG_STREAM_HOST_MAX_LEN]; ///< Configured log sink host
+    uint16_t log_stream_port;           ///< Configured log sink port
+    uint32_t log_stream_dropped;        ///< Dropped log messages while streaming
 } wifi_portal_status_t;
 
 typedef struct {
@@ -161,6 +183,28 @@ esp_err_t wifi_config_get_display_config(display_config_t *config);
  * @return esp_err_t ESP_OK on success
  */
 esp_err_t wifi_config_set_display_config(const display_config_t *config);
+
+/**
+ * @brief Configure remote log streaming destination
+ *
+ * @param host IPv4/hostname for the UDP sink
+ * @param port Destination UDP port
+ * @param persist Save configuration to NVS if true
+ * @return esp_err_t ESP_OK on success
+ */
+esp_err_t wifi_config_set_log_stream(const char *host, uint16_t port, bool persist);
+
+/**
+ * @brief Disable remote log streaming
+ *
+ * @param persist Save the disabled state to NVS if true
+ */
+void wifi_config_disable_log_stream(bool persist);
+
+/**
+ * @brief Get current remote log streaming configuration snapshot
+ */
+void wifi_config_get_log_stream(log_stream_config_t *config_out);
 
 /**
  * @brief Trigger manual display activation via web interface

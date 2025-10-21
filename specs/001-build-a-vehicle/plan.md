@@ -107,6 +107,8 @@ README.md                # User documentation
 
 ## Requirement Completion Log
 - 2025-09-23: Implemented Wi-Fi STA portal management and alert email templating (components/wifi_config, main/main.c). Portal now reports connection state, supports STA credentials, and provides mailto-based alert composition.
+- 2025-09-24: Added UDP log streaming pipeline with persisted configuration and `/api/log-stream` controls (components/wifi_config, main/main.c). Logs now forward off-device when STA networking is available to reduce on-board storage pressure.
+- 2025-09-24: Expanded fluid sensing to four probes with new FULL/RESERVE/EMPTY states and portal visualization (components/sensors, display_controller, wifi_config, main, demo_mode).
 
 ## Progress Tracking
 - [x] Phase 0: Research complete

@@ -31,7 +31,7 @@ A safety-critical embedded device for monitoring vehicle fluid levels using the 
 ## Hardware Requirements
 
 - Waveshare ESP32-S3-Matrix board (8×8 LED matrix; onboard IMU unused)
-- 2× Fluid level sensors (float switches, normally open)
+- 4× Fluid level sensors (non-contact or float, normally open)
 - 12V to 5V buck converter for vehicle power
 - Mounting hardware and wiring
 
@@ -39,8 +39,10 @@ A safety-critical embedded device for monitoring vehicle fluid levels using the 
 
 1. **Hardware Setup**
    ```
-   GPIO2 ← Half-full sensor (NO switch to 3V3)
-   GPIO3 ← Near-empty sensor (NO switch to 3V3)
+   GPIO4 ← Full sensor (drives 3V3 when submerged)
+   GPIO2 ← Above-half sensor (drives 3V3 when submerged)
+   GPIO5 ← Below-half sensor (drives 3V3 when submerged)
+   GPIO3 ← Reserve/near-empty sensor (drives 3V3 when submerged)
    5V ← Buck converter output
    GND ← Common ground
    ```
@@ -63,9 +65,11 @@ A safety-critical embedded device for monitoring vehicle fluid levels using the 
 
 | Icon | Color | Meaning | Sensor State |
 |------|-------|---------|--------------|
-| ✓ | Green | Good level (above half) | Both sensors HIGH |
-| ⚠ | Yellow | Caution (below half) | Half LOW, Empty HIGH |
-| ⬢ | Red | Low (near empty) | Both sensors LOW |
+| ✓ | Green | Tank full | All sensors HIGH |
+| ✓ | Green | Level OK (above half) | Full sensor LOW, remaining sensors HIGH |
+| ⚠ | Yellow | Below half | Full & above-half sensors LOW, lower sensors HIGH |
+| ⬢ | Red | Reserve low | Only reserve sensor HIGH |
+| ⬢ | Red | Empty | All sensors LOW |
 | ✗ | Red (blinking) | Sensor error | Invalid combination |
 
 ## Configuration

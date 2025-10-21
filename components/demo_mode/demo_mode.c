@@ -244,6 +244,7 @@ static void show_demo_state(fluid_level_t level, const char *caption,
 
     led_pattern_t pattern = PATTERN_RED_STOP;
     switch (level) {
+        case FLUID_LEVEL_FULL:
         case FLUID_LEVEL_ABOVE_HALF:
             pattern = PATTERN_GREEN_CHECK;
             break;
@@ -251,6 +252,7 @@ static void show_demo_state(fluid_level_t level, const char *caption,
             pattern = PATTERN_YELLOW_WARN;
             break;
         case FLUID_LEVEL_NEAR_EMPTY:
+        case FLUID_LEVEL_EMPTY:
         default:
             pattern = PATTERN_RED_STOP;
             break;
@@ -288,9 +290,11 @@ static void demo_task(void *arg) {
     while (g_demo.demo_active) {
         g_demo.state = DEMO_MODE_ANIMATE;
         for (int cycle = 0; cycle < 2 && g_demo.demo_active; ++cycle) {
+            show_demo_state(FLUID_LEVEL_FULL, "TANK FULL", LED_COLOR_GREEN);
             show_demo_state(FLUID_LEVEL_ABOVE_HALF, "LEVEL OK", LED_COLOR_GREEN);
             show_demo_state(FLUID_LEVEL_BELOW_HALF, "LOW LEVEL", LED_COLOR_YELLOW);
-            show_demo_state(FLUID_LEVEL_NEAR_EMPTY, "TANK EMPTY", LED_COLOR_RED);
+            show_demo_state(FLUID_LEVEL_NEAR_EMPTY, "RESERVE LOW", LED_COLOR_RED);
+            show_demo_state(FLUID_LEVEL_EMPTY, "TANK EMPTY", LED_COLOR_RED);
         }
 
         if (!g_demo.demo_active) {

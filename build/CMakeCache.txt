@@ -595,7 +595,7 @@ C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS:INTERNAL=1
 //Details about finding Git
 FIND_PACKAGE_MESSAGE_DETAILS_Git:INTERNAL=[/usr/local/bin/git][v2.49.0()]
 //Details about finding Python3
-FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python][cfound components: Interpreter ][v3.12.7()]
+FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python][cfound components: Interpreter ][v3.12.2()]
 //Details about finding Threads
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //ADVANCED property for variable: GIT_EXECUTABLE
@@ -608,7 +608,7 @@ _Python3_Compiler_REASON_FAILURE:INTERNAL=
 _Python3_Development_REASON_FAILURE:INTERNAL=
 _Python3_EXECUTABLE:INTERNAL=/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python
 //Python3 Properties
-_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;12;7;32;64;;;abi3;/opt/anaconda3/lib/python3.12;/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/lib/python3.12;/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/lib/python3.12/site-packages;/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/lib/python3.12/site-packages
+_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;12;2;32;64;;;abi3;/opt/anaconda3/lib/python3.12;/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/lib/python3.12;/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/lib/python3.12/site-packages;/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/lib/python3.12/site-packages
 _Python3_INTERPRETER_SIGNATURE:INTERNAL=2337109fef3a1809e6e0e51595ffa4cb
 //NumPy reason failure
 _Python3_NumPy_REASON_FAILURE:INTERNAL=

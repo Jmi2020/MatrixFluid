@@ -63,20 +63,26 @@ static void draw_caption_snapshot(void);
  */
 static led_pattern_t fluid_level_to_pattern(fluid_level_t level) {
     switch (level) {
+        case FLUID_LEVEL_FULL:       return PATTERN_GREEN_CHECK;
         case FLUID_LEVEL_ABOVE_HALF:  return PATTERN_GREEN_CHECK;
         case FLUID_LEVEL_BELOW_HALF:  return PATTERN_YELLOW_WARN;
         case FLUID_LEVEL_NEAR_EMPTY:  return PATTERN_RED_STOP;
+        case FLUID_LEVEL_EMPTY:       return PATTERN_RED_STOP;
         case FLUID_LEVEL_SENSOR_ERROR:
         default:                      return PATTERN_ERROR_BLINK;
     }
 }
 
 static void build_caption(fluid_level_t level, char *buffer, size_t len,
-                          led_color_t *color_out) {
+                  led_color_t *color_out) {
     const char *text = "STATUS";
     led_color_t color = LED_COLOR_GREEN;
 
     switch (level) {
+        case FLUID_LEVEL_FULL:
+            text = "TANK FULL";
+            color = LED_COLOR_GREEN;
+            break;
         case FLUID_LEVEL_ABOVE_HALF:
             text = "LEVEL OK";
             color = LED_COLOR_GREEN;
@@ -86,6 +92,10 @@ static void build_caption(fluid_level_t level, char *buffer, size_t len,
             color = LED_COLOR_YELLOW;
             break;
         case FLUID_LEVEL_NEAR_EMPTY:
+            text = "RESERVE LOW";
+            color = LED_COLOR_RED;
+            break;
+        case FLUID_LEVEL_EMPTY:
             text = "TANK EMPTY";
             color = LED_COLOR_RED;
             break;

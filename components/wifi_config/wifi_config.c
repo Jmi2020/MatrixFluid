@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/param.h>
+#include <unistd.h>
 #include "wifi_config.h"
 #include "esp_wifi.h"
 #include "esp_netif.h"
@@ -20,9 +21,16 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "freertos/semphr.h"
+#include "freertos/queue.h"
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
+#include "lwip/inet.h"
 #include "cJSON.h"
 #include "display_controller.h"
 #include "alerts.h"
+
+#define STRINGIFY_INTERNAL(x) #x
+#define STRINGIFY(x) STRINGIFY_INTERNAL(x)
 
 static const char *TAG = "wifi_config";
 
@@ -42,6 +50,7 @@ static bool demo_mode_requested = false;
 
 #define WIFI_STA_NVS_NAMESPACE "wifi_sta"
 #define WIFI_STA_NVS_KEY_CONFIG "config"
+#define WIFI_STA_NVS_KEY_LOG_SINK "log_sink"
 
 typedef struct {
     bool enabled;
@@ -91,9 +100,53 @@ static SemaphoreHandle_t log_render_mutex = NULL;
 static char log_temp_buffer[PORTAL_LOG_RING_SIZE + 1] = {0};
 static char log_response_buffer[PORTAL_LOG_RESPONSE_MAX] = {0};
 
+#define LOG_FORWARD_QUEUE_LENGTH   32
+#define LOG_FORWARD_TASK_STACK     4096
+#define LOG_FORWARD_TASK_PRIORITY  4
+#define LOG_FORWARD_MAX_DATAGRAM   PORTAL_LOG_LINE_MAX
+
+typedef struct {
+    bool enabled;
+    char host[LOG_STREAM_HOST_MAX_LEN];
+    uint16_t port;
+} portal_log_sink_config_t;
+
+typedef struct {
+    uint16_t len;
+    char payload[LOG_FORWARD_MAX_DATAGRAM];
+} log_forward_message_t;
+
+typedef struct {
+    QueueHandle_t queue;
+    TaskHandle_t task;
+    bool initialized;
+    bool network_ready;
+    bool destination_valid;
+    bool destination_dirty;
+    int socket_fd;
+    struct sockaddr_in dest_addr;
+    uint32_t dropped;
+    TickType_t last_dns_attempt;
+    TickType_t last_socket_error;
+} log_forward_runtime_t;
+
+static portal_log_sink_config_t log_sink_config = {0};
+static log_forward_runtime_t log_forward = {0};
+static portMUX_TYPE log_forward_lock = portMUX_INITIALIZER_UNLOCKED;
+
 // Forward declarations for internal helpers
 static bool wifi_sta_should_connect(void);
 static void wifi_sta_update_status(void);
+static void log_sink_load_config(const log_stream_config_t *defaults);
+static esp_err_t log_sink_save_config(const portal_log_sink_config_t *cfg);
+static void log_forward_init(void);
+static void log_forward_queue_line(const char *line, size_t len);
+static void log_forward_mark_network_ready(bool ready);
+static void log_forward_handle_disconnect(void);
+static void log_forward_fill_portal_status(void);
+static void log_forward_task(void *arg);
+static esp_err_t api_log_stream_get_handler(httpd_req_t *req);
+static esp_err_t api_log_stream_post_handler(httpd_req_t *req);
 
 static void wifi_sta_reset_runtime(void) {
     sta_runtime.has_credentials = wifi_sta_should_connect();
@@ -150,6 +203,78 @@ static void wifi_sta_save_config(void) {
     nvs_close(handle);
 }
 
+static void log_sink_load_config(const log_stream_config_t *defaults) {
+    portal_log_sink_config_t cfg = {
+        .enabled = false,
+        .host = {0},
+        .port = 514,
+    };
+
+    if (defaults) {
+        if (defaults->udp_port != 0) {
+            cfg.port = defaults->udp_port;
+        }
+        if (defaults->enable_udp_sink && defaults->udp_host[0] != '\0') {
+            cfg.enabled = true;
+            strncpy(cfg.host, defaults->udp_host, sizeof(cfg.host) - 1);
+            cfg.host[sizeof(cfg.host) - 1] = '\0';
+        }
+    }
+
+    portENTER_CRITICAL(&log_forward_lock);
+    log_sink_config = cfg;
+    portEXIT_CRITICAL(&log_forward_lock);
+
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(WIFI_STA_NVS_NAMESPACE, NVS_READONLY, &handle);
+    if (err == ESP_OK) {
+        portal_log_sink_config_t stored = cfg;
+        size_t required = sizeof(stored);
+        err = nvs_get_blob(handle, WIFI_STA_NVS_KEY_LOG_SINK, &stored, &required);
+        nvs_close(handle);
+        if (err == ESP_OK && required == sizeof(stored)) {
+            stored.host[sizeof(stored.host) - 1] = '\0';
+            if (stored.port == 0) {
+                stored.port = cfg.port;
+            }
+            portENTER_CRITICAL(&log_forward_lock);
+            log_sink_config = stored;
+            portEXIT_CRITICAL(&log_forward_lock);
+        } else if (err != ESP_ERR_NVS_NOT_FOUND) {
+            ESP_LOGW(TAG, "Failed to load log sink config: %s", esp_err_to_name(err));
+        }
+    } else if (err != ESP_ERR_NVS_NOT_FOUND) {
+        ESP_LOGW(TAG, "Failed to open NVS for log sink: %s", esp_err_to_name(err));
+    }
+
+    log_forward_fill_portal_status();
+}
+
+static esp_err_t log_sink_save_config(const portal_log_sink_config_t *cfg) {
+    if (!cfg) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(WIFI_STA_NVS_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to open NVS for log sink save: %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = nvs_set_blob(handle, WIFI_STA_NVS_KEY_LOG_SINK, cfg, sizeof(*cfg));
+    if (err == ESP_OK) {
+        err = nvs_commit(handle);
+    }
+    nvs_close(handle);
+
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to save log sink config: %s", esp_err_to_name(err));
+    }
+
+    return err;
+}
+
 static bool wifi_sta_should_connect(void) {
     return sta_config.enabled && sta_config.ssid[0] != '\0';
 }
@@ -166,6 +291,8 @@ static void wifi_sta_update_status(void) {
     portal_status.sta_last_disconnect_reason = sta_runtime.last_disconnect_reason;
     strncpy(portal_status.sta_last_error, sta_runtime.last_error, sizeof(portal_status.sta_last_error) - 1);
     portal_status.sta_last_error[sizeof(portal_status.sta_last_error) - 1] = '\0';
+
+    log_forward_fill_portal_status();
 }
 
 static void wifi_sta_set_error(const char *message, int reason_code) {
@@ -328,6 +455,7 @@ static int portal_log_vprintf(const char *fmt, va_list args) {
                 scratch[to_write] = '\0';
             }
             portal_logs_write(scratch, to_write);
+            log_forward_queue_line(scratch, to_write);
         }
     }
 
@@ -360,6 +488,330 @@ static void portal_logs_init(void) {
     log_ring_wrapped = false;
     prev_vprintf = esp_log_set_vprintf(portal_log_vprintf);
     log_hook_installed = true;
+}
+
+static void log_forward_close_socket_locked(void) {
+    if (log_forward.socket_fd >= 0) {
+        close(log_forward.socket_fd);
+        log_forward.socket_fd = -1;
+    }
+}
+
+static bool log_forward_resolve_destination(const char *host, uint16_t port, struct sockaddr_in *out) {
+    if (!host || host[0] == '\0' || !out) {
+        return false;
+    }
+
+    memset(out, 0, sizeof(*out));
+    out->sin_family = AF_INET;
+    out->sin_port = htons(port);
+
+    struct in_addr addr;
+    if (inet_aton(host, &addr)) {
+        out->sin_addr = addr;
+        return true;
+    }
+
+    struct addrinfo hints = {
+        .ai_family = AF_INET,
+        .ai_socktype = SOCK_DGRAM,
+    };
+
+    struct addrinfo *result = NULL;
+    int err = getaddrinfo(host, NULL, &hints, &result);
+    if (err != 0 || !result) {
+        if (result) {
+            freeaddrinfo(result);
+        }
+        return false;
+    }
+
+    struct sockaddr_in *resolved = (struct sockaddr_in *)result->ai_addr;
+    if (resolved) {
+        out->sin_addr = resolved->sin_addr;
+    }
+
+    freeaddrinfo(result);
+    return resolved != NULL;
+}
+
+static void log_forward_fill_portal_status(void) {
+    portal_log_sink_config_t cfg_snapshot;
+    bool network_ready;
+    bool destination_valid;
+    int socket_fd;
+    uint32_t dropped;
+
+    portENTER_CRITICAL(&log_forward_lock);
+    cfg_snapshot = log_sink_config;
+    network_ready = log_forward.network_ready;
+    destination_valid = log_forward.destination_valid;
+    socket_fd = log_forward.socket_fd;
+    dropped = log_forward.dropped;
+    portEXIT_CRITICAL(&log_forward_lock);
+
+    bool enabled = cfg_snapshot.enabled && cfg_snapshot.host[0] != '\0';
+    bool active = enabled && network_ready && destination_valid && socket_fd >= 0;
+
+    portal_status.log_stream_enabled = enabled;
+    portal_status.log_stream_active = active;
+    strncpy(portal_status.log_stream_host, cfg_snapshot.host, sizeof(portal_status.log_stream_host) - 1);
+    portal_status.log_stream_host[sizeof(portal_status.log_stream_host) - 1] = '\0';
+    portal_status.log_stream_port = cfg_snapshot.port;
+    portal_status.log_stream_dropped = dropped;
+}
+
+static void log_forward_mark_destination_dirty(void) {
+    portENTER_CRITICAL(&log_forward_lock);
+    log_forward.destination_dirty = true;
+    log_forward.destination_valid = false;
+    log_forward_close_socket_locked();
+    portEXIT_CRITICAL(&log_forward_lock);
+}
+
+static esp_err_t log_forward_apply_config(const portal_log_sink_config_t *cfg, bool persist) {
+    if (!cfg) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    portal_log_sink_config_t sanitized = *cfg;
+    sanitized.host[sizeof(sanitized.host) - 1] = '\0';
+    if (sanitized.enabled && sanitized.port == 0) {
+        sanitized.port = 514;
+    }
+
+    portENTER_CRITICAL(&log_forward_lock);
+    log_sink_config = sanitized;
+    portEXIT_CRITICAL(&log_forward_lock);
+
+    log_forward_mark_destination_dirty();
+    log_forward_fill_portal_status();
+
+    if (persist) {
+        return log_sink_save_config(&sanitized);
+    }
+    return ESP_OK;
+}
+
+static void log_forward_init(void) {
+    bool already_init;
+    portENTER_CRITICAL(&log_forward_lock);
+    already_init = log_forward.initialized;
+    portEXIT_CRITICAL(&log_forward_lock);
+
+    if (already_init) {
+        return;
+    }
+
+    QueueHandle_t queue = xQueueCreate(LOG_FORWARD_QUEUE_LENGTH, sizeof(log_forward_message_t));
+    if (!queue) {
+        ESP_LOGW(TAG, "Failed to allocate log forward queue");
+        return;
+    }
+
+    TaskHandle_t task_handle = NULL;
+    BaseType_t created = xTaskCreatePinnedToCore(log_forward_task,
+                                                 "log_forward",
+                                                 LOG_FORWARD_TASK_STACK,
+                                                 NULL,
+                                                 LOG_FORWARD_TASK_PRIORITY,
+                                                 &task_handle,
+                                                 tskNO_AFFINITY);
+    if (created != pdPASS) {
+        ESP_LOGW(TAG, "Failed to start log forward task");
+        vQueueDelete(queue);
+        return;
+    }
+
+    portENTER_CRITICAL(&log_forward_lock);
+    log_forward.queue = queue;
+    log_forward.task = task_handle;
+    log_forward.initialized = true;
+    log_forward.network_ready = false;
+    log_forward.destination_valid = false;
+    log_forward.destination_dirty = true;
+    log_forward.socket_fd = -1;
+    memset(&log_forward.dest_addr, 0, sizeof(log_forward.dest_addr));
+    log_forward.dropped = 0;
+    log_forward.last_dns_attempt = 0;
+    log_forward.last_socket_error = 0;
+    portEXIT_CRITICAL(&log_forward_lock);
+
+    log_forward_fill_portal_status();
+}
+
+static void log_forward_queue_line(const char *line, size_t len) {
+    if (!line || len == 0) {
+        return;
+    }
+
+    QueueHandle_t queue = NULL;
+    bool enabled = false;
+
+    portENTER_CRITICAL(&log_forward_lock);
+    if (log_forward.initialized && log_sink_config.enabled && log_sink_config.host[0] != '\0') {
+        queue = log_forward.queue;
+        enabled = true;
+    }
+    portEXIT_CRITICAL(&log_forward_lock);
+
+    if (!enabled || !queue) {
+        return;
+    }
+
+    log_forward_message_t msg = {0};
+    if (len >= LOG_FORWARD_MAX_DATAGRAM) {
+        len = LOG_FORWARD_MAX_DATAGRAM - 1;
+    }
+    memcpy(msg.payload, line, len);
+    msg.len = (uint16_t)len;
+
+    if (msg.len < LOG_FORWARD_MAX_DATAGRAM - 1) {
+        if (msg.len == 0 || msg.payload[msg.len - 1] != '\n') {
+            msg.payload[msg.len++] = '\n';
+        }
+        msg.payload[msg.len] = '\0';
+    } else {
+        msg.payload[LOG_FORWARD_MAX_DATAGRAM - 1] = '\0';
+    }
+
+    if (xQueueSend(queue, &msg, 0) != pdTRUE) {
+        portENTER_CRITICAL(&log_forward_lock);
+        log_forward.dropped++;
+        portEXIT_CRITICAL(&log_forward_lock);
+        log_forward_fill_portal_status();
+    }
+}
+
+static void log_forward_mark_network_ready(bool ready) {
+    portENTER_CRITICAL(&log_forward_lock);
+    log_forward.network_ready = ready;
+    if (!ready) {
+        log_forward.destination_valid = false;
+        log_forward.destination_dirty = true;
+        log_forward_close_socket_locked();
+    } else {
+        log_forward.destination_dirty = true;
+    }
+    portEXIT_CRITICAL(&log_forward_lock);
+
+    log_forward_fill_portal_status();
+}
+
+static void log_forward_handle_disconnect(void) {
+    log_forward_mark_network_ready(false);
+}
+
+static void log_forward_task(void *arg) {
+    (void)arg;
+
+    log_forward_message_t msg;
+    while (1) {
+        if (xQueueReceive(log_forward.queue, &msg, portMAX_DELAY) != pdTRUE) {
+            continue;
+        }
+
+        portal_log_sink_config_t cfg;
+        bool network_ready;
+        bool destination_valid;
+        bool destination_dirty;
+        struct sockaddr_in dest_snapshot;
+        int socket_fd;
+
+        portENTER_CRITICAL(&log_forward_lock);
+        cfg = log_sink_config;
+        network_ready = log_forward.network_ready;
+        destination_valid = log_forward.destination_valid;
+        destination_dirty = log_forward.destination_dirty;
+        dest_snapshot = log_forward.dest_addr;
+        socket_fd = log_forward.socket_fd;
+        portEXIT_CRITICAL(&log_forward_lock);
+
+        if (!cfg.enabled || cfg.host[0] == '\0') {
+            continue;
+        }
+
+        if (!network_ready) {
+            portENTER_CRITICAL(&log_forward_lock);
+            log_forward.dropped++;
+            portEXIT_CRITICAL(&log_forward_lock);
+            log_forward_fill_portal_status();
+            vTaskDelay(pdMS_TO_TICKS(200));
+            continue;
+        }
+
+        if (!destination_valid || destination_dirty) {
+            struct sockaddr_in resolved;
+            bool resolved_ok = log_forward_resolve_destination(cfg.host, cfg.port, &resolved);
+
+            portENTER_CRITICAL(&log_forward_lock);
+            if (resolved_ok) {
+                log_forward.dest_addr = resolved;
+                log_forward.destination_valid = true;
+                log_forward.destination_dirty = false;
+                dest_snapshot = resolved;
+            } else {
+                log_forward.destination_valid = false;
+                log_forward.destination_dirty = true;
+                log_forward.dropped++;
+            }
+            portEXIT_CRITICAL(&log_forward_lock);
+
+            if (!resolved_ok) {
+                log_forward_fill_portal_status();
+                vTaskDelay(pdMS_TO_TICKS(2000));
+                continue;
+            }
+        }
+
+        portENTER_CRITICAL(&log_forward_lock);
+        socket_fd = log_forward.socket_fd;
+        dest_snapshot = log_forward.dest_addr;
+        portEXIT_CRITICAL(&log_forward_lock);
+
+        if (socket_fd < 0) {
+            socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+            if (socket_fd < 0) {
+                portENTER_CRITICAL(&log_forward_lock);
+                log_forward.dropped++;
+                log_forward.last_socket_error = xTaskGetTickCount();
+                portEXIT_CRITICAL(&log_forward_lock);
+                log_forward_fill_portal_status();
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                continue;
+            }
+
+            struct timeval tv = {
+                .tv_sec = 0,
+                .tv_usec = 500000,
+            };
+            setsockopt(socket_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+
+            int broadcast = 1;
+            setsockopt(socket_fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
+
+            portENTER_CRITICAL(&log_forward_lock);
+            log_forward.socket_fd = socket_fd;
+            dest_snapshot = log_forward.dest_addr;
+            portEXIT_CRITICAL(&log_forward_lock);
+        }
+
+        ssize_t sent = sendto(socket_fd, msg.payload, msg.len, 0,
+                               (struct sockaddr *)&dest_snapshot, sizeof(dest_snapshot));
+        if (sent < 0) {
+            portENTER_CRITICAL(&log_forward_lock);
+            log_forward.dropped++;
+            log_forward.last_socket_error = xTaskGetTickCount();
+            log_forward.destination_valid = false;
+            log_forward.destination_dirty = true;
+            log_forward_close_socket_locked();
+            portEXIT_CRITICAL(&log_forward_lock);
+            log_forward_fill_portal_status();
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        } else {
+            log_forward_fill_portal_status();
+        }
+    }
 }
 
 static esp_err_t wifi_sta_apply_config(bool restart_wifi) {
@@ -507,7 +959,9 @@ static const char* html_page =
 "<div class='status-card'><span>Connected Clients</span><div id='client-count' class='status-value'>0</div></div>"
 "<div class='status-card'><span>Wi-Fi STA</span><div id='wifi-sta' class='status-value'>--</div></div>"
 "<div class='status-card'><span>Wi-Fi IP</span><div id='wifi-ip' class='status-value'>--</div></div>"
+"<div class='status-card'><span>Full Sensor</span><div id='sensor-full' class='status-value'>--</div></div>"
 "<div class='status-card'><span>Half Sensor</span><div id='sensor-half' class='status-value'>--</div></div>"
+"<div class='status-card'><span>Low Sensor</span><div id='sensor-low' class='status-value'>--</div></div>"
 "<div class='status-card'><span>Empty Sensor</span><div id='sensor-empty' class='status-value'>--</div></div>"
 "</div></section>"
 "<section><h2>Manual Actions</h2><div class='controls'>"
@@ -600,13 +1054,15 @@ static const char* html_page =
 "<button type='submit' class='btn btn-primary'>Save Settings</button>"
 "</form></section>"
 "<section><h2>Pin Reference</h2>"
-"<p><strong>GPIO2</strong> - Half-full sensor (drives 3.3V when closed)</p>"
-"<p><strong>GPIO3</strong> - Near-empty sensor (drives 3.3V when closed)</p>"
+"<p><strong>GPIO" STRINGIFY(FLUID_FULL_SENSOR_GPIO) "</strong> - Full sensor (drives 3.3V when submerged)</p>"
+"<p><strong>GPIO" STRINGIFY(FLUID_HALF_SENSOR_GPIO) "</strong> - Above-half sensor (drives 3.3V when submerged)</p>"
+"<p><strong>GPIO" STRINGIFY(FLUID_LOW_SENSOR_GPIO) "</strong> - Below-half sensor (drives 3.3V when submerged)</p>"
+"<p><strong>GPIO" STRINGIFY(FLUID_EMPTY_SENSOR_GPIO) "</strong> - Reserve/near-empty sensor (drives 3.3V when submerged)</p>"
 "<p><strong>GPIO14</strong> - LED matrix data line</p>"
 "<p><strong>5V / GND</strong> - Supply via buck converter (vehicle) or USB-C (demo)</p>"
 "</section>"
 "</section></main>"
-"<script>\nconst brightnessInput=document.getElementById('brightness');\nbrightnessInput.addEventListener('input',()=>{document.getElementById('brightness-val').textContent=brightnessInput.value;markConfigDirty();});\nbrightnessInput.addEventListener('change',markConfigDirty);\nlet alertFormDirty=false;\nlet suppressAlertChange=false;\nlet wifiFormDirty=false;\nlet suppressWifiChange=false;\nlet configFormDirty=false;\nlet suppressConfigChange=false;\nfunction markAlertDirty(){if(!suppressAlertChange){alertFormDirty=true;}}\nfunction syncTimezoneSelect(offset){const select=document.getElementById('alert-tz-select');if(!select)return;if(offset===null||offset===undefined||Number.isNaN(offset)){select.value='';return;}const value=String(offset);const match=Array.from(select.options).some(opt=>opt.value===value&&opt.value!=='');select.value=match?value:'';}\nfunction handleTimezoneSelectChange(){const select=document.getElementById('alert-tz-select');const tzField=document.getElementById('alert-tz');if(!select||!tzField)return;if(select.value!==''){tzField.value=select.value;handleTimezoneInputChange();}else{markAlertDirty();}}\nfunction handleTimezoneInputChange(){const tzField=document.getElementById('alert-tz');if(!tzField)return;const parsed=parseInt(tzField.value,10);syncTimezoneSelect(Number.isNaN(parsed)?null:parsed);markAlertDirty();}\nfunction formatLevel(level){const lower=(level||'UNKNOWN').toLowerCase();if(lower.includes('empty'))return 'NEAR EMPTY';return (level||'UNKNOWN').replace(/_/g,' ');}\nfunction formatTime(seconds){if(seconds===null||seconds===undefined)return '--';if(seconds<60)return seconds+'s';const mins=Math.floor(seconds/60);const secs=seconds%60;return mins+'m '+secs+'s';}\nfunction formatUptime(seconds){if(!seconds)return '--';const hrs=Math.floor(seconds/3600);const mins=Math.floor((seconds%3600)/60);return (hrs?hrs+'h ':'')+mins+'m';}\nfunction formatPowerSource(source){if(!source)return '--';const normalized=String(source).toLowerCase();if(normalized.includes('usb'))return 'USB';if(normalized.includes('buck'))return '5V Buck';return source;}\nfunction describeSensor(submerged,signalHigh){if(signalHigh&&submerged)return 'WET (HIGH)';if(!signalHigh&&!submerged)return 'DRY (LOW)';if(signalHigh&&!submerged)return 'Mixed (HIGH)';if(!signalHigh&&submerged)return 'Mixed (LOW)';return 'UNKNOWN';}\nfunction sensorClass(submerged,signalHigh){if(signalHigh&&submerged)return 'level-ok';if(!signalHigh&&!submerged)return 'level-crit';return 'level-warn';}\nfunction pad(num){return String(num).padStart(2,'0');}\nfunction formatTimestamp(epoch){if(!epoch)return '--';const date=new Date(epoch*1000);if(Number.isNaN(date.getTime()))return '--';return date.toLocaleString();}\nfunction setAlertDays(bitmap){document.querySelectorAll('.alert-day').forEach(cb=>{const bit=1<<parseInt(cb.value,10);cb.checked=!!(bitmap&bit);});}\nfunction getAlertDaysBitmap(){let mask=0;document.querySelectorAll('.alert-day:checked').forEach(cb=>{mask|=(1<<parseInt(cb.value,10));});return mask;}\nfunction alertFrequencyToString(value){const upper=String(value).toUpperCase();if(upper==='WEEKLY'||upper==='1')return 'WEEKLY';if(upper==='WEEKDAYS'||upper==='2')return 'WEEKDAYS';return 'DAILY';}\nfunction alertEmailTemplate(level){const upper=String(level||'UNKNOWN').toUpperCase();if(upper==='EMPTY'){return{subject:'MatrixFluid Tank EMPTY - Immediate Action Required',body:'The tank is EMPTY. Please refill immediately to restore service.',button:'Send Emergency Email'};}if(upper==='NEAR_EMPTY'){return{subject:'MatrixFluid Tank Low - Refill Soon',body:'The tank is near empty. Please schedule a refill as soon as possible.',button:'Send Low-Level Email'};}if(upper==='BELOW_HALF'||upper==='AT_HALF'){return{subject:'MatrixFluid Tank Below Half',body:'The tank level is below half capacity. Monitor usage and plan a refill.',button:'Send Status Email'};}if(upper==='ABOVE_HALF'){return{subject:'MatrixFluid Tank Status - Normal',body:'The tank level is above half capacity. No immediate action required.',button:'Share Status Email'};}return{subject:'MatrixFluid Tank Status Update',body:'Tank status update available from MatrixFluid.',button:'Compose Status Email'};}\nfunction updateAlertDaysAvailability(freq){const enabledEl=document.getElementById('alert-enabled');const enabled=enabledEl?enabledEl.checked:false;const upper=(freq||'DAILY').toUpperCase();document.querySelectorAll('.alert-day').forEach(cb=>{if(!enabled){cb.disabled=true;return;}if(upper==='DAILY'){cb.disabled=true;cb.checked=true;}else if(upper==='WEEKDAYS'){const val=parseInt(cb.value,10);const allowed=val>=1&&val<=5;cb.disabled=true;cb.checked=allowed;}else{cb.disabled=false;}});}\nfunction updateAlertControls(){const enabledEl=document.getElementById('alert-enabled');const enabled=enabledEl?enabledEl.checked:false;document.querySelectorAll('.alert-input').forEach(el=>{if(el.classList.contains('alert-day'))return;el.disabled=!enabled;});const frequency=document.getElementById('alert-frequency');if(frequency){updateAlertDaysAvailability(frequency.value);}const badge=document.getElementById('alert-state');if(badge){badge.className='badge '+(enabled?'badge-on':'badge-off');badge.textContent=enabled?'Enabled':'Disabled';}}\nfunction applyAlertStatus(alerts){const editing=alertFormDirty;const enabledToggle=document.getElementById('alert-enabled');suppressAlertChange=true;if(!editing&&enabledToggle){enabledToggle.checked=!!(alerts&&alerts.enabled);}const frequency=document.getElementById('alert-frequency');if(!editing&&frequency){const freqValue=alerts&&(alerts.frequency_string||alertFrequencyToString(alerts.frequency));frequency.value=freqValue||'DAILY';}const timeField=document.getElementById('alert-time');if(!editing&&timeField&&alerts){timeField.value=pad(alerts.hour||0)+':'+pad(alerts.minute||0);}const tzField=document.getElementById('alert-tz');let tzValue=null;if(tzField){if(!editing&&alerts){tzValue=alerts.tz_offset_minutes;tzField.value=tzValue!==undefined&&tzValue!==null?tzValue:0;}else{const parsed=parseInt(tzField.value,10);tzValue=Number.isNaN(parsed)?null:parsed;}syncTimezoneSelect(tzValue);}if(!editing&&alerts){setAlertDays(alerts.days_bitmap);}const webhook=document.getElementById('alert-webhook');if(!editing&&webhook&&alerts){webhook.value=alerts.webhook_url||'';}const auth=document.getElementById('alert-auth');if(!editing&&auth&&alerts){auth.value=alerts.auth_header||'';}const recipient=document.getElementById('alert-recipient');if(!editing&&recipient&&alerts){recipient.value=alerts.recipient||'';}suppressAlertChange=false;const next=document.getElementById('alert-next');if(next){next.textContent=alerts?formatTimestamp(alerts.next_run_epoch):'--';}const lastAttempt=document.getElementById('alert-last-attempt');if(lastAttempt){lastAttempt.textContent=alerts?formatTimestamp(alerts.last_attempt_epoch):'--';}const lastSuccess=document.getElementById('alert-last-success');if(lastSuccess){lastSuccess.textContent=alerts?formatTimestamp(alerts.last_success_epoch):'--';}const lastError=document.getElementById('alert-last-error');if(lastError){lastError.textContent=alerts&&alerts.last_error?alerts.last_error:'--';}updateAlertControls();}\nfunction markWifiDirty(){if(!suppressWifiChange){wifiFormDirty=true;}}\nfunction markConfigDirty(){if(!suppressConfigChange){configFormDirty=true;}}\nfunction updateWifiControls(){const enabledToggle=document.getElementById('wifi-enabled');const badge=document.getElementById('wifi-state');const staInfo=window.__wifiStatusCache||null;const enabled=enabledToggle?enabledToggle.checked:false;let text='Disabled';let cls='badge badge-off';if(staInfo){if(staInfo.connected){text='Connected';cls='badge badge-on';}else if(staInfo.connecting){text='Connecting';cls='badge badge-on';}else if(staInfo.enabled&&staInfo.has_credentials){text='Enabled';cls='badge badge-on';}else if(staInfo.has_credentials){text='Ready';cls='badge badge-off';}}else if(enabled){text='Enabled';cls='badge badge-on';}if(badge){badge.className=cls;badge.textContent=text;}const forgetBtn=document.getElementById('wifi-forget');if(forgetBtn){forgetBtn.disabled=!(staInfo&&staInfo.has_credentials);}}\nfunction applyWifiStatus(wifi){window.__wifiStatusCache=wifi&&wifi.sta?wifi.sta:null;const editing=wifiFormDirty;const enabledToggle=document.getElementById('wifi-enabled');suppressWifiChange=true;if(!editing&&enabledToggle){enabledToggle.checked=!!(wifi&&wifi.sta&&wifi.sta.enabled);}const ssidField=document.getElementById('wifi-ssid');if(!editing&&ssidField){ssidField.value=(wifi&&wifi.sta&&wifi.sta.ssid)||'';}const passwordField=document.getElementById('wifi-password');if(!editing&&passwordField){passwordField.value='';}suppressWifiChange=false;const sta=wifi?wifi.sta:null;const connectionEl=document.getElementById('wifi-connection-state');const ipEl=document.getElementById('wifi-ip-status');const errorEl=document.getElementById('wifi-last-error');const connectionText=sta?(sta.connected?'Connected':(sta.connecting?'Connecting':(sta.enabled?'Enabled':(sta.has_credentials?'Ready':'Disabled')))):'Disabled';if(connectionEl){connectionEl.textContent=connectionText;}if(ipEl){ipEl.textContent=(sta&&sta.ip)?sta.ip:'--';}if(errorEl){errorEl.textContent=(sta&&sta.last_error)?sta.last_error:'--';}updateWifiControls();}\nfunction saveWifi(event){event.preventDefault();const payload={};const enabledToggle=document.getElementById('wifi-enabled');if(enabledToggle){payload.enabled=!!enabledToggle.checked;}const ssidField=document.getElementById('wifi-ssid');if(ssidField&&ssidField.value.trim().length){payload.ssid=ssidField.value.trim();}const passwordField=document.getElementById('wifi-password');if(passwordField&&passwordField.value.length){payload.password=passwordField.value;}fetch('/api/wifi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.text()).then(()=>{alert('Wi-Fi settings saved');wifiFormDirty=false;if(passwordField){passwordField.value='';}setTimeout(loadStatus,400);}).catch(e=>alert('Save Wi-Fi failed: '+e));}\nfunction forgetWifi(){const passwordField=document.getElementById('wifi-password');fetch('/api/wifi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({forget:true})}).then(r=>r.text()).then(()=>{alert('Wi-Fi credentials cleared');wifiFormDirty=false;if(passwordField){passwordField.value='';}setTimeout(loadStatus,400);}).catch(e=>alert('Forget Wi-Fi failed: '+e));}\nfunction alertEmailTemplate(level){const upper=String(level||'UNKNOWN').toUpperCase();if(upper==='EMPTY'){return{subject:'MatrixFluid Tank EMPTY - Immediate Action Required',body:'The tank is EMPTY. Please refill immediately to restore service.',button:'Send Emergency Email'};}if(upper==='NEAR_EMPTY'){return{subject:'MatrixFluid Tank Low - Refill Soon',body:'The tank is near empty. Please schedule a refill as soon as possible.',button:'Send Low-Level Email'};}if(upper==='BELOW_HALF'||upper==='AT_HALF'){return{subject:'MatrixFluid Tank Below Half',body:'The tank level is below half capacity. Monitor usage and plan a refill.',button:'Send Status Email'};}if(upper==='ABOVE_HALF'){return{subject:'MatrixFluid Tank Status - Normal',body:'The tank level is above half capacity. No immediate action required.',button:'Share Status Email'};}return{subject:'MatrixFluid Tank Status Update',body:'Tank status update available from MatrixFluid.',button:'Compose Status Email'};}\nfunction updateAlertEmailLink(status){const link=document.getElementById('alert-email-link');if(!link){return;}const template=alertEmailTemplate(status&&status.fluid_level);const alerts=status?status.alerts:null;const recipient=alerts&&alerts.recipient?alerts.recipient.trim():'';const levelLabel=formatLevel(status?status.fluid_level:null);const powerLabel=formatPowerSource(status?status.power_source:null)||'--';const timestamp=new Date().toLocaleString();const lines=[template.body,'','Current level: '+levelLabel,'Power source: '+powerLabel,'Timestamp: '+timestamp,'','Sent from MatrixFluid Portal'];const subject=encodeURIComponent(template.subject);const body=encodeURIComponent(lines.join('\\n'));const mailto='mailto:'+(recipient?encodeURIComponent(recipient):'')+'?subject='+subject+'&body='+body;link.href=mailto;link.textContent=template.button;link.style.display='inline-block';}\nfunction loadStatus(){\n  fetch('/api/status')\n    .then(r=>r.json())\n    .then(data=>{\n      const level=data.fluid_level||'UNKNOWN';\n      const displayLevel=data.displayed_fluid_level||level;\n      const levelDiv=document.getElementById('fluid-level');\n      const className=level==='ABOVE_HALF'?'level-ok':level==='BELOW_HALF'?'level-warn':'level-crit';\n      levelDiv.className='status-value '+className;\n      levelDiv.textContent=formatLevel(level);\n      const displayState=document.getElementById('display-state');\n      if(displayState){displayState.textContent=data.display_active?('ACTIVE - '+formatLevel(displayLevel)):('OFF - '+formatLevel(displayLevel));}\n      const periodicEnabled=!!(data.config&&data.config.periodic_display_enabled);\n      document.getElementById('next-wake').textContent=periodicEnabled?formatTime(data.next_wake_seconds):'Manual Only';\n      document.getElementById('power-source').textContent=formatPowerSource(data.power_source);\n      document.getElementById('manual-count').textContent=data.stats?data.stats.manual_trigger_count:0;\n      document.getElementById('periodic-count').textContent=data.stats?data.stats.periodic_trigger_count:0;\n      document.getElementById('uptime').textContent=formatUptime(data.uptime_seconds);\n      document.getElementById('client-count').textContent=data.connected_clients||0;\n      const wifiInfo=data.wifi&&data.wifi.sta?data.wifi.sta:null;\n      const wifiStaCard=document.getElementById('wifi-sta');\n      if(wifiStaCard){const connected=wifiInfo&&wifiInfo.connected;const connecting=wifiInfo&&!wifiInfo.connected&&wifiInfo.connecting;const hasCred=wifiInfo&&wifiInfo.has_credentials;let stateText='Disabled';let cls='status-value level-crit';if(connected){stateText='Connected';cls='status-value level-ok';}else if(connecting){stateText='Connecting';cls='status-value level-warn';}else if(wifiInfo&&wifiInfo.enabled&&hasCred){stateText='Enabled';cls='status-value level-warn';}else if(hasCred){stateText='Ready';cls='status-value level-warn';}wifiStaCard.textContent=stateText;wifiStaCard.className=cls;}\n      const wifiIpCard=document.getElementById('wifi-ip');\n      if(wifiIpCard){const ip=wifiInfo&&wifiInfo.ip?wifiInfo.ip:(data.wifi&&data.wifi.ap?data.wifi.ap.ip:'--');wifiIpCard.textContent=ip||'--';wifiIpCard.className=(wifiInfo&&wifiInfo.connected)?'status-value level-ok':'status-value level-warn';}\n      const periodicField=document.getElementById('periodic');\n      const intervalField=document.getElementById('interval');\n      const durationField=document.getElementById('duration');\n      const editingConfig=configFormDirty;\n      suppressConfigChange=true;\n      if(!editingConfig&&periodicField){periodicField.value=String(periodicEnabled);}\n      if(!editingConfig&&intervalField){intervalField.value=Math.max(1,Math.round((data.config.display_interval_seconds||60)/60));}\n      if(!editingConfig&&durationField){durationField.value=data.config.display_duration_seconds||7;}\n      if(!editingConfig){brightnessInput.value=data.config.display_brightness||3;document.getElementById('brightness-val').textContent=brightnessInput.value;}\n      suppressConfigChange=false;\n      const sensorHalf=document.getElementById('sensor-half');\n      const sensorEmpty=document.getElementById('sensor-empty');\n      if(sensorHalf){const text=describeSensor(!!data.half_sensor_submerged,!!data.half_sensor_signal_high);sensorHalf.textContent=text;sensorHalf.className='status-value '+sensorClass(!!data.half_sensor_submerged,!!data.half_sensor_signal_high);}\n      if(sensorEmpty){const text=describeSensor(!!data.empty_sensor_submerged,!!data.empty_sensor_signal_high);sensorEmpty.textContent=text;sensorEmpty.className='status-value '+sensorClass(!!data.empty_sensor_submerged,!!data.empty_sensor_signal_high);}\n      const demoToggle=document.getElementById('demo-toggle');\n      if(demoToggle){\n        const portalRequested=!!data.demo_mode_requested;\n        const autoRequested=!!data.auto_demo_requested;\n        const active=!!data.demo_mode_active;\n        demoToggle.checked=portalRequested||active;\n        const badge=document.getElementById('demo-state');\n        const anyRequested=active||portalRequested||autoRequested;\n        badge.className='badge '+(anyRequested?'badge-on':'badge-off');\n        badge.textContent=active?'Running':portalRequested?'Requested':autoRequested?'USB Host':'Inactive';\n      }\n      applyWifiStatus(data.wifi);\n      applyAlertStatus(data.alerts);\n      updateAlertEmailLink(data);\n    })\n    .catch(e=>console.error('Status load failed:',e));\n}\nfunction triggerDisplay(){fetch('/api/trigger',{method:'POST'}).then(r=>r.text()).then(msg=>alert('Display triggered! '+msg)).catch(e=>alert('Trigger failed: '+e));}\nfunction toggleDemo(enabled){fetch('/api/demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enable:!!enabled})}).then(()=>setTimeout(loadStatus,400)).catch(e=>alert('Demo toggle failed: '+e));}\nfunction saveConfig(event){event.preventDefault();const config={periodic_display_enabled:document.getElementById('periodic').value==='true',display_interval_seconds:Math.max(60,parseInt(document.getElementById('interval').value||15,10)*60),display_duration_seconds:Math.max(1,parseInt(document.getElementById('duration').value||7,10)),display_brightness:Math.min(5,Math.max(1,parseInt(brightnessInput.value||3,10)))};fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(config)}).then(r=>r.text()).then(msg=>{alert('Settings saved! '+msg);configFormDirty=false;suppressConfigChange=false;setTimeout(loadStatus,400);}).catch(e=>alert('Save failed: '+e));}\nfunction saveAlerts(event){event.preventDefault();var enabled=document.getElementById('alert-enabled')?document.getElementById('alert-enabled').checked:false;var frequency=document.getElementById('alert-frequency')?document.getElementById('alert-frequency').value.toUpperCase():'DAILY';var timeValue=document.getElementById('alert-time')?document.getElementById('alert-time').value:'06:00';var parts=timeValue.split(':');var hour=parseInt(parts[0]||'0',10);var minute=parseInt(parts[1]||'0',10);var tz=parseInt(document.getElementById('alert-tz')?document.getElementById('alert-tz').value:'0',10);var payload={enabled:enabled,frequency:frequency,days_bitmap:getAlertDaysBitmap(),hour:hour,minute:minute,tz_offset_minutes:tz,webhook_url:(document.getElementById('alert-webhook')?document.getElementById('alert-webhook').value.trim():''),auth_header:(document.getElementById('alert-auth')?document.getElementById('alert-auth').value.trim():''),recipient:(document.getElementById('alert-recipient')?document.getElementById('alert-recipient').value.trim():'')};fetch('/api/alerts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.text()).then(msg=>{alert('Alert settings saved');alertFormDirty=false;setTimeout(loadStatus,400);}).catch(e=>alert('Save alerts failed: '+e));}\nfunction requestLedStatus(){fetch('/api/led').then(r=>r.json()).then(data=>{const statusEl=document.getElementById('led-status');if(statusEl){statusEl.textContent=`${data.active?'ACTIVE':'OFF'} - ${data.display_level} (brightness ${data.brightness}, mode ${data.mode}, last ${data.last_trigger})`;}}).catch(e=>alert('LED status failed: '+e));}\nfunction requestHealth(){fetch('/api/health').then(r=>r.json()).then(data=>{const healthEl=document.getElementById('health-status');if(healthEl){healthEl.textContent=JSON.stringify(data,null,2);}}).catch(e=>alert('Health check failed: '+e));}\nfunction refreshLogs(){fetch('/api/logs').then(r=>r.json()).then(data=>{const output=document.getElementById('log-output');if(!output)return;const text=(data&&typeof data.logs==='string')?data.logs:'No log data available.';output.textContent=text;output.scrollTop=output.scrollHeight;}).catch(e=>alert('Fetch logs failed: '+e));}\nconst alertTzSelect=document.getElementById('alert-tz-select');if(alertTzSelect){alertTzSelect.addEventListener('change',handleTimezoneSelectChange);}\nconst alertTzField=document.getElementById('alert-tz');if(alertTzField){alertTzField.addEventListener('input',handleTimezoneInputChange);alertTzField.addEventListener('change',handleTimezoneInputChange);}\ndocument.querySelectorAll('.alert-input').forEach(el=>{el.addEventListener('input',markAlertDirty);el.addEventListener('change',markAlertDirty);});\ndocument.querySelectorAll('.wifi-input').forEach(el=>{el.addEventListener('input',markWifiDirty);el.addEventListener('change',markWifiDirty);});\n['periodic','interval','duration'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',markConfigDirty);el.addEventListener('change',markConfigDirty);}});\nconst alertFrequencyField=document.getElementById('alert-frequency');if(alertFrequencyField){alertFrequencyField.addEventListener('change',function(){updateAlertDaysAvailability(alertFrequencyField.value);});}\nconst alertEnabledToggle=document.getElementById('alert-enabled');if(alertEnabledToggle){alertEnabledToggle.addEventListener('change',()=>{updateAlertControls();markAlertDirty();});}\nconst wifiEnabledToggle=document.getElementById('wifi-enabled');if(wifiEnabledToggle){wifiEnabledToggle.addEventListener('change',()=>{markWifiDirty();updateWifiControls();});}\nupdateAlertControls();\nupdateWifiControls();\nsuppressAlertChange=true;\nhandleTimezoneInputChange();\nsuppressAlertChange=false;\nloadStatus();setInterval(loadStatus,5000);refreshLogs();\n</script></body></html>";
+"<script>\nconst brightnessInput=document.getElementById('brightness');\\nbrightnessInput.addEventListener('input',()=>{document.getElementById('brightness-val').textContent=brightnessInput.value;markConfigDirty();});\\nbrightnessInput.addEventListener('change',markConfigDirty);\\nlet alertFormDirty=false;\\nlet suppressAlertChange=false;\\nlet wifiFormDirty=false;\\nlet suppressWifiChange=false;\\nlet configFormDirty=false;\\nlet suppressConfigChange=false;\\nfunction markAlertDirty(){if(!suppressAlertChange){alertFormDirty=true;}}\\nfunction syncTimezoneSelect(offset){const select=document.getElementById('alert-tz-select');if(!select)return;if(offset===null||offset===undefined||Number.isNaN(offset)){select.value='';return;}const value=String(offset);const match=Array.from(select.options).some(opt=>opt.value===value&&opt.value!=='');select.value=match?value:'';}\\nfunction handleTimezoneSelectChange(){const select=document.getElementById('alert-tz-select');const tzField=document.getElementById('alert-tz');if(!select||!tzField)return;if(select.value!==''){tzField.value=select.value;handleTimezoneInputChange();}else{markAlertDirty();}}\\nfunction handleTimezoneInputChange(){const tzField=document.getElementById('alert-tz');if(!tzField)return;const parsed=parseInt(tzField.value,10);syncTimezoneSelect(Number.isNaN(parsed)?null:parsed);markAlertDirty();}\\nfunction formatLevel(level){const lower=(level||'UNKNOWN').toLowerCase();if(lower==='empty')return 'EMPTY';if(lower.includes('near')&&lower.includes('empty'))return 'NEAR EMPTY';return (level||'UNKNOWN').replace(/_/g,' ');}\\nfunction formatTime(seconds){if(seconds===null||seconds===undefined)return '--';if(seconds<60)return seconds+'s';const mins=Math.floor(seconds/60);const secs=seconds%60;return mins+'m '+secs+'s';}\\nfunction formatUptime(seconds){if(!seconds)return '--';const hrs=Math.floor(seconds/3600);const mins=Math.floor((seconds%3600)/60);return (hrs?hrs+'h ':'')+mins+'m';}\\nfunction formatPowerSource(source){if(!source)return '--';const normalized=String(source).toLowerCase();if(normalized.includes('usb'))return 'USB';if(normalized.includes('buck'))return '5V Buck';return source;}\\nfunction describeSensor(submerged,signalHigh){if(signalHigh&&submerged)return 'WET (HIGH)';if(!signalHigh&&!submerged)return 'DRY (LOW)';if(signalHigh&&!submerged)return 'Mixed (HIGH)';if(!signalHigh&&submerged)return 'Mixed (LOW)';return 'UNKNOWN';}\\nfunction sensorClass(submerged,signalHigh){if(signalHigh&&submerged)return 'level-ok';if(!signalHigh&&!submerged)return 'level-crit';return 'level-warn';}\\nfunction pad(num){return String(num).padStart(2,'0');}\\nfunction formatTimestamp(epoch){if(!epoch)return '--';const date=new Date(epoch*1000);if(Number.isNaN(date.getTime()))return '--';return date.toLocaleString();}\\nfunction setAlertDays(bitmap){document.querySelectorAll('.alert-day').forEach(cb=>{const bit=1<<parseInt(cb.value,10);cb.checked=!!(bitmap&bit);});}\\nfunction getAlertDaysBitmap(){let mask=0;document.querySelectorAll('.alert-day:checked').forEach(cb=>{mask|=(1<<parseInt(cb.value,10));});return mask;}\\nfunction alertFrequencyToString(value){const upper=String(value).toUpperCase();if(upper==='WEEKLY'||upper==='1')return 'WEEKLY';if(upper==='WEEKDAYS'||upper==='2')return 'WEEKDAYS';return 'DAILY';}\\nfunction alertEmailTemplate(level){const upper=String(level||'UNKNOWN').toUpperCase();if(upper==='EMPTY'){return{subject:'MatrixFluid Tank EMPTY - Immediate Action Required',body:'The tank is EMPTY. Please refill immediately to restore service.',button:'Send Emergency Email'};}if(upper==='NEAR_EMPTY'){return{subject:'MatrixFluid Tank Low - Refill Soon',body:'The tank is near empty. Please schedule a refill as soon as possible.',button:'Send Low-Level Email'};}if(upper==='BELOW_HALF'||upper==='AT_HALF'){return{subject:'MatrixFluid Tank Below Half',body:'The tank level is below half capacity. Monitor usage and plan a refill.',button:'Send Status Email'};}if(upper==='ABOVE_HALF'){return{subject:'MatrixFluid Tank Status - Normal',body:'The tank level is above half capacity. No immediate action required.',button:'Share Status Email'};}return{subject:'MatrixFluid Tank Status Update',body:'Tank status update available from MatrixFluid.',button:'Compose Status Email'};}\\nfunction updateAlertDaysAvailability(freq){const enabledEl=document.getElementById('alert-enabled');const enabled=enabledEl?enabledEl.checked:false;const upper=(freq||'DAILY').toUpperCase();document.querySelectorAll('.alert-day').forEach(cb=>{if(!enabled){cb.disabled=true;return;}if(upper==='DAILY'){cb.disabled=true;cb.checked=true;}else if(upper==='WEEKDAYS'){const val=parseInt(cb.value,10);const allowed=val>=1&&val<=5;cb.disabled=true;cb.checked=allowed;}else{cb.disabled=false;}});}\\nfunction updateAlertControls(){const enabledEl=document.getElementById('alert-enabled');const enabled=enabledEl?enabledEl.checked:false;document.querySelectorAll('.alert-input').forEach(el=>{if(el.classList.contains('alert-day'))return;el.disabled=!enabled;});const frequency=document.getElementById('alert-frequency');if(frequency){updateAlertDaysAvailability(frequency.value);}const badge=document.getElementById('alert-state');if(badge){badge.className='badge '+(enabled?'badge-on':'badge-off');badge.textContent=enabled?'Enabled':'Disabled';}}\\nfunction applyAlertStatus(alerts){const editing=alertFormDirty;const enabledToggle=document.getElementById('alert-enabled');suppressAlertChange=true;if(!editing&&enabledToggle){enabledToggle.checked=!!(alerts&&alerts.enabled);}const frequency=document.getElementById('alert-frequency');if(!editing&&frequency){const freqValue=alerts&&(alerts.frequency_string||alertFrequencyToString(alerts.frequency));frequency.value=freqValue||'DAILY';}const timeField=document.getElementById('alert-time');if(!editing&&timeField&&alerts){timeField.value=pad(alerts.hour||0)+':'+pad(alerts.minute||0);}const tzField=document.getElementById('alert-tz');let tzValue=null;if(tzField){if(!editing&&alerts){tzValue=alerts.tz_offset_minutes;tzField.value=tzValue!==undefined&&tzValue!==null?tzValue:0;}else{const parsed=parseInt(tzField.value,10);tzValue=Number.isNaN(parsed)?null:parsed;}syncTimezoneSelect(tzValue);}if(!editing&&alerts){setAlertDays(alerts.days_bitmap);}const webhook=document.getElementById('alert-webhook');if(!editing&&webhook&&alerts){webhook.value=alerts.webhook_url||'';}const auth=document.getElementById('alert-auth');if(!editing&&auth&&alerts){auth.value=alerts.auth_header||'';}const recipient=document.getElementById('alert-recipient');if(!editing&&recipient&&alerts){recipient.value=alerts.recipient||'';}suppressAlertChange=false;const next=document.getElementById('alert-next');if(next){next.textContent=alerts?formatTimestamp(alerts.next_run_epoch):'--';}const lastAttempt=document.getElementById('alert-last-attempt');if(lastAttempt){lastAttempt.textContent=alerts?formatTimestamp(alerts.last_attempt_epoch):'--';}const lastSuccess=document.getElementById('alert-last-success');if(lastSuccess){lastSuccess.textContent=alerts?formatTimestamp(alerts.last_success_epoch):'--';}const lastError=document.getElementById('alert-last-error');if(lastError){lastError.textContent=alerts&&alerts.last_error?alerts.last_error:'--';}updateAlertControls();}\\nfunction markWifiDirty(){if(!suppressWifiChange){wifiFormDirty=true;}}\\nfunction markConfigDirty(){if(!suppressConfigChange){configFormDirty=true;}}\\nfunction updateWifiControls(){const enabledToggle=document.getElementById('wifi-enabled');const badge=document.getElementById('wifi-state');const staInfo=window.__wifiStatusCache||null;const enabled=enabledToggle?enabledToggle.checked:false;let text='Disabled';let cls='badge badge-off';if(staInfo){if(staInfo.connected){text='Connected';cls='badge badge-on';}else if(staInfo.connecting){text='Connecting';cls='badge badge-on';}else if(staInfo.enabled&&staInfo.has_credentials){text='Enabled';cls='badge badge-on';}else if(staInfo.has_credentials){text='Ready';cls='badge badge-off';}}else if(enabled){text='Enabled';cls='badge badge-on';}if(badge){badge.className=cls;badge.textContent=text;}const forgetBtn=document.getElementById('wifi-forget');if(forgetBtn){forgetBtn.disabled=!(staInfo&&staInfo.has_credentials);}}\\nfunction applyWifiStatus(wifi){window.__wifiStatusCache=wifi&&wifi.sta?wifi.sta:null;const editing=wifiFormDirty;const enabledToggle=document.getElementById('wifi-enabled');suppressWifiChange=true;if(!editing&&enabledToggle){enabledToggle.checked=!!(wifi&&wifi.sta&&wifi.sta.enabled);}const ssidField=document.getElementById('wifi-ssid');if(!editing&&ssidField){ssidField.value=(wifi&&wifi.sta&&wifi.sta.ssid)||'';}const passwordField=document.getElementById('wifi-password');if(!editing&&passwordField){passwordField.value='';}suppressWifiChange=false;const sta=wifi?wifi.sta:null;const connectionEl=document.getElementById('wifi-connection-state');const ipEl=document.getElementById('wifi-ip-status');const errorEl=document.getElementById('wifi-last-error');const connectionText=sta?(sta.connected?'Connected':(sta.connecting?'Connecting':(sta.enabled?'Enabled':(sta.has_credentials?'Ready':'Disabled')))):'Disabled';if(connectionEl){connectionEl.textContent=connectionText;}if(ipEl){ipEl.textContent=(sta&&sta.ip)?sta.ip:'--';}if(errorEl){errorEl.textContent=(sta&&sta.last_error)?sta.last_error:'--';}updateWifiControls();}\\nfunction saveWifi(event){event.preventDefault();const payload={};const enabledToggle=document.getElementById('wifi-enabled');if(enabledToggle){payload.enabled=!!enabledToggle.checked;}const ssidField=document.getElementById('wifi-ssid');if(ssidField&&ssidField.value.trim().length){payload.ssid=ssidField.value.trim();}const passwordField=document.getElementById('wifi-password');if(passwordField&&passwordField.value.length){payload.password=passwordField.value;}fetch('/api/wifi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.text()).then(()=>{alert('Wi-Fi settings saved');wifiFormDirty=false;if(passwordField){passwordField.value='';}setTimeout(loadStatus,400);}).catch(e=>alert('Save Wi-Fi failed: '+e));}\\nfunction forgetWifi(){const passwordField=document.getElementById('wifi-password');fetch('/api/wifi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({forget:true})}).then(r=>r.text()).then(()=>{alert('Wi-Fi credentials cleared');wifiFormDirty=false;if(passwordField){passwordField.value='';}setTimeout(loadStatus,400);}).catch(e=>alert('Forget Wi-Fi failed: '+e));}\\nfunction alertEmailTemplate(level){const upper=String(level||'UNKNOWN').toUpperCase();if(upper==='EMPTY'){return{subject:'MatrixFluid Tank EMPTY - Immediate Action Required',body:'The tank is EMPTY. Please refill immediately to restore service.',button:'Send Emergency Email'};}if(upper==='NEAR_EMPTY'){return{subject:'MatrixFluid Tank Low - Refill Soon',body:'The tank is near empty. Please schedule a refill as soon as possible.',button:'Send Low-Level Email'};}if(upper==='BELOW_HALF'||upper==='AT_HALF'){return{subject:'MatrixFluid Tank Below Half',body:'The tank level is below half capacity. Monitor usage and plan a refill.',button:'Send Status Email'};}if(upper==='ABOVE_HALF'){return{subject:'MatrixFluid Tank Status - Normal',body:'The tank level is above half capacity. No immediate action required.',button:'Share Status Email'};}return{subject:'MatrixFluid Tank Status Update',body:'Tank status update available from MatrixFluid.',button:'Compose Status Email'};}\\nfunction updateAlertEmailLink(status){const link=document.getElementById('alert-email-link');if(!link){return;}const template=alertEmailTemplate(status&&status.fluid_level);const alerts=status?status.alerts:null;const recipient=alerts&&alerts.recipient?alerts.recipient.trim():'';const levelLabel=formatLevel(status?status.fluid_level:null);const powerLabel=formatPowerSource(status?status.power_source:null)||'--';const timestamp=new Date().toLocaleString();const lines=[template.body,'','Current level: '+levelLabel,'Power source: '+powerLabel,'Timestamp: '+timestamp,'','Sent from MatrixFluid Portal'];const subject=encodeURIComponent(template.subject);const body=encodeURIComponent(lines.join('\\n'));const mailto='mailto:'+(recipient?encodeURIComponent(recipient):'')+'?subject='+subject+'&body='+body;link.href=mailto;link.textContent=template.button;link.style.display='inline-block';}\\nfunction loadStatus(){\\n  fetch('/api/status')\\n    .then(r=>r.json())\\n    .then(data=>{\\n      const level=data.fluid_level||'UNKNOWN';\\n      const displayLevel=data.displayed_fluid_level||level;\\n      const levelDiv=document.getElementById('fluid-level');\\n      const className=level==='ABOVE_HALF'?'level-ok':level==='BELOW_HALF'?'level-warn':'level-crit';\\n      levelDiv.className='status-value '+className;\\n      levelDiv.textContent=formatLevel(level);\\n      const displayState=document.getElementById('display-state');\\n      if(displayState){displayState.textContent=data.display_active?('ACTIVE - '+formatLevel(displayLevel)):('OFF - '+formatLevel(displayLevel));}\\n      const periodicEnabled=!!(data.config&&data.config.periodic_display_enabled);\\n      document.getElementById('next-wake').textContent=periodicEnabled?formatTime(data.next_wake_seconds):'Manual Only';\\n      document.getElementById('power-source').textContent=formatPowerSource(data.power_source);\\n      document.getElementById('manual-count').textContent=data.stats?data.stats.manual_trigger_count:0;\\n      document.getElementById('periodic-count').textContent=data.stats?data.stats.periodic_trigger_count:0;\\n      document.getElementById('uptime').textContent=formatUptime(data.uptime_seconds);\\n      document.getElementById('client-count').textContent=data.connected_clients||0;\\n      const wifiInfo=data.wifi&&data.wifi.sta?data.wifi.sta:null;\\n      const wifiStaCard=document.getElementById('wifi-sta');\\n      if(wifiStaCard){const connected=wifiInfo&&wifiInfo.connected;const connecting=wifiInfo&&!wifiInfo.connected&&wifiInfo.connecting;const hasCred=wifiInfo&&wifiInfo.has_credentials;let stateText='Disabled';let cls='status-value level-crit';if(connected){stateText='Connected';cls='status-value level-ok';}else if(connecting){stateText='Connecting';cls='status-value level-warn';}else if(wifiInfo&&wifiInfo.enabled&&hasCred){stateText='Enabled';cls='status-value level-warn';}else if(hasCred){stateText='Ready';cls='status-value level-warn';}wifiStaCard.textContent=stateText;wifiStaCard.className=cls;}\\n      const wifiIpCard=document.getElementById('wifi-ip');\\n      if(wifiIpCard){const ip=wifiInfo&&wifiInfo.ip?wifiInfo.ip:(data.wifi&&data.wifi.ap?data.wifi.ap.ip:'--');wifiIpCard.textContent=ip||'--';wifiIpCard.className=(wifiInfo&&wifiInfo.connected)?'status-value level-ok':'status-value level-warn';}\\n      const periodicField=document.getElementById('periodic');\\n      const intervalField=document.getElementById('interval');\\n      const durationField=document.getElementById('duration');\\n      const editingConfig=configFormDirty;\\n      suppressConfigChange=true;\\n      if(!editingConfig&&periodicField){periodicField.value=String(periodicEnabled);}\\n      if(!editingConfig&&intervalField){intervalField.value=Math.max(1,Math.round((data.config.display_interval_seconds||60)/60));}\\n      if(!editingConfig&&durationField){durationField.value=data.config.display_duration_seconds||7;}\\n      if(!editingConfig){brightnessInput.value=data.config.display_brightness||3;document.getElementById('brightness-val').textContent=brightnessInput.value;}\\n      suppressConfigChange=false;\\n      const sensorFull=document.getElementById('sensor-full');\\n      const sensorHalf=document.getElementById('sensor-half');\\n      const sensorLow=document.getElementById('sensor-low');\\n      const sensorEmpty=document.getElementById('sensor-empty');\\n      const applySensorCard=(el,submerged,signal)=>{if(!el)return;const text=describeSensor(!!submerged,!!signal);el.textContent=text;el.className='status-value '+sensorClass(!!submerged,!!signal);};\\n      applySensorCard(sensorFull,data.full_sensor_submerged,data.full_sensor_signal_high);\\n      applySensorCard(sensorHalf,data.half_sensor_submerged,data.half_sensor_signal_high);\\n      applySensorCard(sensorLow,data.low_sensor_submerged,data.low_sensor_signal_high);\\n      applySensorCard(sensorEmpty,data.empty_sensor_submerged,data.empty_sensor_signal_high);\\n      const demoToggle=document.getElementById('demo-toggle');\\n      if(demoToggle){\\n        const portalRequested=!!data.demo_mode_requested;\\n        const autoRequested=!!data.auto_demo_requested;\\n        const active=!!data.demo_mode_active;\\n        demoToggle.checked=portalRequested||active;\\n        const badge=document.getElementById('demo-state');\\n        const anyRequested=active||portalRequested||autoRequested;\\n        badge.className='badge '+(anyRequested?'badge-on':'badge-off');\\n        badge.textContent=active?'Running':portalRequested?'Requested':autoRequested?'USB Host':'Inactive';\\n      }\\n      applyWifiStatus(data.wifi);\\n      applyAlertStatus(data.alerts);\\n      updateAlertEmailLink(data);\\n    })\\n    .catch(e=>console.error('Status load failed:',e));\\n}\\nfunction triggerDisplay(){fetch('/api/trigger',{method:'POST'}).then(r=>r.text()).then(msg=>alert('Display triggered! '+msg)).catch(e=>alert('Trigger failed: '+e));}\\nfunction toggleDemo(enabled){fetch('/api/demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enable:!!enabled})}).then(()=>setTimeout(loadStatus,400)).catch(e=>alert('Demo toggle failed: '+e));}\\nfunction saveConfig(event){event.preventDefault();const config={periodic_display_enabled:document.getElementById('periodic').value==='true',display_interval_seconds:Math.max(60,parseInt(document.getElementById('interval').value||15,10)*60),display_duration_seconds:Math.max(1,parseInt(document.getElementById('duration').value||7,10)),display_brightness:Math.min(5,Math.max(1,parseInt(brightnessInput.value||3,10)))};fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(config)}).then(r=>r.text()).then(msg=>{alert('Settings saved! '+msg);configFormDirty=false;suppressConfigChange=false;setTimeout(loadStatus,400);}).catch(e=>alert('Save failed: '+e));}\\nfunction saveAlerts(event){event.preventDefault();var enabled=document.getElementById('alert-enabled')?document.getElementById('alert-enabled').checked:false;var frequency=document.getElementById('alert-frequency')?document.getElementById('alert-frequency').value.toUpperCase():'DAILY';var timeValue=document.getElementById('alert-time')?document.getElementById('alert-time').value:'06:00';var parts=timeValue.split(':');var hour=parseInt(parts[0]||'0',10);var minute=parseInt(parts[1]||'0',10);var tz=parseInt(document.getElementById('alert-tz')?document.getElementById('alert-tz').value:'0',10);var payload={enabled:enabled,frequency:frequency,days_bitmap:getAlertDaysBitmap(),hour:hour,minute:minute,tz_offset_minutes:tz,webhook_url:(document.getElementById('alert-webhook')?document.getElementById('alert-webhook').value.trim():''),auth_header:(document.getElementById('alert-auth')?document.getElementById('alert-auth').value.trim():''),recipient:(document.getElementById('alert-recipient')?document.getElementById('alert-recipient').value.trim():'')};fetch('/api/alerts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.text()).then(msg=>{alert('Alert settings saved');alertFormDirty=false;setTimeout(loadStatus,400);}).catch(e=>alert('Save alerts failed: '+e));}\\nfunction requestLedStatus(){fetch('/api/led').then(r=>r.json()).then(data=>{const statusEl=document.getElementById('led-status');if(statusEl){statusEl.textContent=`${data.active?'ACTIVE':'OFF'} - ${data.display_level} (brightness ${data.brightness}, mode ${data.mode}, last ${data.last_trigger})`;}}).catch(e=>alert('LED status failed: '+e));}\\nfunction requestHealth(){fetch('/api/health').then(r=>r.json()).then(data=>{const healthEl=document.getElementById('health-status');if(healthEl){healthEl.textContent=JSON.stringify(data,null,2);}}).catch(e=>alert('Health check failed: '+e));}\\nfunction refreshLogs(){fetch('/api/logs').then(r=>r.json()).then(data=>{const output=document.getElementById('log-output');if(!output)return;const text=(data&&typeof data.logs==='string')?data.logs:'No log data available.';output.textContent=text;output.scrollTop=output.scrollHeight;}).catch(e=>alert('Fetch logs failed: '+e));}\\nconst alertTzSelect=document.getElementById('alert-tz-select');if(alertTzSelect){alertTzSelect.addEventListener('change',handleTimezoneSelectChange);}\\nconst alertTzField=document.getElementById('alert-tz');if(alertTzField){alertTzField.addEventListener('input',handleTimezoneInputChange);alertTzField.addEventListener('change',handleTimezoneInputChange);}\\ndocument.querySelectorAll('.alert-input').forEach(el=>{el.addEventListener('input',markAlertDirty);el.addEventListener('change',markAlertDirty);});\\ndocument.querySelectorAll('.wifi-input').forEach(el=>{el.addEventListener('input',markWifiDirty);el.addEventListener('change',markWifiDirty);});\\n['periodic','interval','duration'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',markConfigDirty);el.addEventListener('change',markConfigDirty);}});\\nconst alertFrequencyField=document.getElementById('alert-frequency');if(alertFrequencyField){alertFrequencyField.addEventListener('change',function(){updateAlertDaysAvailability(alertFrequencyField.value);});}\\nconst alertEnabledToggle=document.getElementById('alert-enabled');if(alertEnabledToggle){alertEnabledToggle.addEventListener('change',()=>{updateAlertControls();markAlertDirty();});}\\nconst wifiEnabledToggle=document.getElementById('wifi-enabled');if(wifiEnabledToggle){wifiEnabledToggle.addEventListener('change',()=>{markWifiDirty();updateWifiControls();});}\\nupdateAlertControls();\\nupdateWifiControls();\\nsuppressAlertChange=true;\\nhandleTimezoneInputChange();\\nsuppressAlertChange=false;\\nloadStatus();setInterval(loadStatus,5000);refreshLogs();\\n</script></body></html>";
 
 
 static void clamp_display_config(display_config_t *config) {
@@ -696,9 +1152,13 @@ void wifi_config_update_status(const wifi_portal_status_t *status) {
     portal_status.demo_mode_active = status->demo_mode_active;
     portal_status.auto_demo_requested = status->auto_demo_requested;
     portal_status.power_source = status->power_source;
+    portal_status.full_sensor_submerged = status->full_sensor_submerged;
     portal_status.half_sensor_submerged = status->half_sensor_submerged;
+    portal_status.low_sensor_submerged = status->low_sensor_submerged;
     portal_status.empty_sensor_submerged = status->empty_sensor_submerged;
+    portal_status.full_sensor_signal_high = status->full_sensor_signal_high;
     portal_status.half_sensor_signal_high = status->half_sensor_signal_high;
+    portal_status.low_sensor_signal_high = status->low_sensor_signal_high;
     portal_status.empty_sensor_signal_high = status->empty_sensor_signal_high;
     portal_status.ota_in_progress = ota_state.in_progress;
     portal_status.ota_bytes_written = (uint32_t)ota_state.bytes_written;
@@ -802,6 +1262,20 @@ static httpd_uri_t uri_api_logs = {
     .user_ctx = NULL
 };
 
+static httpd_uri_t uri_api_log_stream_get = {
+    .uri = "/api/log-stream",
+    .method = HTTP_GET,
+    .handler = api_log_stream_get_handler,
+    .user_ctx = NULL
+};
+
+static httpd_uri_t uri_api_log_stream_post = {
+    .uri = "/api/log-stream",
+    .method = HTTP_POST,
+    .handler = api_log_stream_post_handler,
+    .user_ctx = NULL
+};
+
 /**
  * @brief WiFi event handler
  */
@@ -835,6 +1309,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                 sta_runtime.ip[0] = '\0';
                 wifi_sta_set_error(NULL, 0);
             }
+            log_forward_mark_network_ready(false);
             break;
         }
         case WIFI_EVENT_STA_CONNECTED: {
@@ -842,6 +1317,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
             sta_runtime.connecting = true;
             sta_runtime.connected = false;
             wifi_sta_set_error(NULL, 0);
+            log_forward_mark_network_ready(false);
             break;
         }
         case WIFI_EVENT_STA_DISCONNECTED: {
@@ -880,6 +1356,7 @@ static void ip_event_handler(void* arg, esp_event_base_t event_base,
     wifi_sta_set_error(NULL, 0);
     wifi_sta_update_status();
     ESP_LOGI(TAG, "STA obtained IP: %s", sta_runtime.ip);
+    log_forward_mark_network_ready(true);
 }
 
 /**
@@ -933,9 +1410,13 @@ static cJSON *build_status_json(void) {
     cJSON_AddStringToObject(json, "fluid_level", level_str ? level_str : "UNKNOWN");
     const char *display_level_str = fluid_level_to_string(portal_status.displayed_fluid_level);
     cJSON_AddStringToObject(json, "displayed_fluid_level", display_level_str ? display_level_str : "UNKNOWN");
+    cJSON_AddBoolToObject(json, "full_sensor_submerged", portal_status.full_sensor_submerged);
     cJSON_AddBoolToObject(json, "half_sensor_submerged", portal_status.half_sensor_submerged);
+    cJSON_AddBoolToObject(json, "low_sensor_submerged", portal_status.low_sensor_submerged);
     cJSON_AddBoolToObject(json, "empty_sensor_submerged", portal_status.empty_sensor_submerged);
+    cJSON_AddBoolToObject(json, "full_sensor_signal_high", portal_status.full_sensor_signal_high);
     cJSON_AddBoolToObject(json, "half_sensor_signal_high", portal_status.half_sensor_signal_high);
+    cJSON_AddBoolToObject(json, "low_sensor_signal_high", portal_status.low_sensor_signal_high);
     cJSON_AddBoolToObject(json, "empty_sensor_signal_high", portal_status.empty_sensor_signal_high);
     cJSON_AddBoolToObject(json, "display_active", portal_status.display_active);
     cJSON_AddNumberToObject(json, "uptime_seconds", portal_status.uptime_seconds);
@@ -1011,6 +1492,16 @@ static cJSON *build_status_json(void) {
         cJSON_AddStringToObject(alerts, "recipient", portal_status.alerts.recipient);
         cJSON_AddStringToObject(alerts, "last_error", portal_status.alerts.last_error);
         cJSON_AddItemToObject(json, "alerts", alerts);
+    }
+
+    cJSON *logging = cJSON_CreateObject();
+    if (logging) {
+        cJSON_AddBoolToObject(logging, "enabled", portal_status.log_stream_enabled);
+        cJSON_AddBoolToObject(logging, "active", portal_status.log_stream_active);
+        cJSON_AddStringToObject(logging, "host", portal_status.log_stream_host);
+        cJSON_AddNumberToObject(logging, "port", portal_status.log_stream_port);
+        cJSON_AddNumberToObject(logging, "dropped", portal_status.log_stream_dropped);
+        cJSON_AddItemToObject(json, "log_stream", logging);
     }
 
     return json;
@@ -1642,6 +2133,110 @@ static esp_err_t api_logs_handler(httpd_req_t *req) {
     return result;
 }
 
+static esp_err_t api_log_stream_get_handler(httpd_req_t *req) {
+    cJSON *json = cJSON_CreateObject();
+    if (!json) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    cJSON_AddBoolToObject(json, "enabled", portal_status.log_stream_enabled);
+    cJSON_AddBoolToObject(json, "active", portal_status.log_stream_active);
+    cJSON_AddStringToObject(json, "host", portal_status.log_stream_host);
+    cJSON_AddNumberToObject(json, "port", portal_status.log_stream_port);
+    cJSON_AddNumberToObject(json, "dropped", portal_status.log_stream_dropped);
+
+    log_stream_config_t cfg;
+    wifi_config_get_log_stream(&cfg);
+    cJSON_AddBoolToObject(json, "configured_enabled", cfg.enable_udp_sink);
+    cJSON_AddStringToObject(json, "configured_host", cfg.udp_host);
+    cJSON_AddNumberToObject(json, "configured_port", cfg.udp_port);
+
+    char *payload = cJSON_PrintUnformatted(json);
+    if (!payload) {
+        cJSON_Delete(json);
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    httpd_resp_set_type(req, "application/json");
+    esp_err_t result = httpd_resp_send(req, payload, strlen(payload));
+
+    cJSON_free(payload);
+    cJSON_Delete(json);
+    return result;
+}
+
+static esp_err_t api_log_stream_post_handler(httpd_req_t *req) {
+    char content[MAX_HTTP_REQUEST_SIZE];
+    size_t recv_size = MIN(req->content_len, sizeof(content) - 1);
+
+    int ret = httpd_req_recv(req, content, recv_size);
+    if (ret <= 0) {
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            return ESP_OK;
+        }
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+    content[ret] = '\0';
+
+    cJSON *json = cJSON_Parse(content);
+    if (!json) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
+        return ESP_FAIL;
+    }
+
+    bool enabled = portal_status.log_stream_enabled;
+    bool persist = true;
+    const cJSON *enabled_item = cJSON_GetObjectItem(json, "enabled");
+    if (cJSON_IsBool(enabled_item)) {
+        enabled = cJSON_IsTrue(enabled_item);
+    }
+
+    const cJSON *persist_item = cJSON_GetObjectItem(json, "persist");
+    if (cJSON_IsBool(persist_item)) {
+        persist = cJSON_IsTrue(persist_item);
+    }
+
+    const cJSON *host_item = cJSON_GetObjectItem(json, "host");
+    const char *host = (cJSON_IsString(host_item) && host_item->valuestring) ? host_item->valuestring : NULL;
+
+    uint16_t port = portal_status.log_stream_port ? portal_status.log_stream_port : 514;
+    const cJSON *port_item = cJSON_GetObjectItem(json, "port");
+    if (cJSON_IsNumber(port_item)) {
+        int value = port_item->valueint;
+        if (value < 0 || value > 65535) {
+            cJSON_Delete(json);
+            httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Port out of range");
+            return ESP_FAIL;
+        }
+        port = (uint16_t)value;
+    }
+
+    esp_err_t err = ESP_OK;
+    if (enabled) {
+        if (!host || host[0] == '\0') {
+            cJSON_Delete(json);
+            httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Host required when enabling");
+            return ESP_FAIL;
+        }
+        err = wifi_config_set_log_stream(host, port, persist);
+    } else {
+        wifi_config_disable_log_stream(persist);
+    }
+
+    cJSON_Delete(json);
+
+    if (err != ESP_OK) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, esp_err_to_name(err));
+        return err;
+    }
+
+    httpd_resp_sendstr(req, "OK");
+    return ESP_OK;
+}
+
 esp_err_t wifi_config_init(const wifi_config_init_t *config) {
     if (!config) {
         ESP_LOGE(TAG, "Configuration is NULL");
@@ -1666,6 +2261,7 @@ esp_err_t wifi_config_init(const wifi_config_init_t *config) {
     }
     ESP_RETURN_ON_ERROR(ret, TAG, "NVS init failed");
 
+    log_sink_load_config(&config->log_stream);
     wifi_sta_load_config();
 
     // Initialize network interface
@@ -1675,6 +2271,8 @@ esp_err_t wifi_config_init(const wifi_config_init_t *config) {
     wifi_initialized = true;
 
     portal_logs_init();
+    log_forward_init();
+    log_forward_fill_portal_status();
     ESP_LOGI(TAG, "WiFi configuration initialized");
 
     return ESP_OK;
@@ -1685,6 +2283,8 @@ esp_err_t wifi_config_start_ap(void) {
         ESP_LOGE(TAG, "WiFi not initialized");
         return ESP_ERR_INVALID_STATE;
     }
+
+    log_forward_mark_network_ready(false);
 
     if (!wifi_netif) {
         wifi_netif = esp_netif_create_default_wifi_ap();
@@ -1733,6 +2333,8 @@ esp_err_t wifi_config_start_server(void) {
     httpd_register_uri_handler(http_server, &uri_api_alerts);
     httpd_register_uri_handler(http_server, &uri_api_wifi);
     httpd_register_uri_handler(http_server, &uri_api_logs);
+    httpd_register_uri_handler(http_server, &uri_api_log_stream_get);
+    httpd_register_uri_handler(http_server, &uri_api_log_stream_post);
 
     server_running = true;
     ESP_LOGI(TAG, "HTTP server started on port %d", HTTP_SERVER_PORT);
@@ -1741,6 +2343,8 @@ esp_err_t wifi_config_start_server(void) {
 }
 
 esp_err_t wifi_config_stop_ap(void) {
+    log_forward_handle_disconnect();
+
     if (wifi_handlers_registered) {
         esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler);
         esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler);
@@ -1795,6 +2399,48 @@ esp_err_t wifi_config_set_display_config(const display_config_t *config) {
     portal_status.display_config = current_display_config;
     ESP_LOGI(TAG, "Display configuration updated via API");
     return ESP_OK;
+}
+
+esp_err_t wifi_config_set_log_stream(const char *host, uint16_t port, bool persist) {
+    if (!host || host[0] == '\0') {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    portal_log_sink_config_t cfg = {
+        .enabled = true,
+        .host = {0},
+        .port = port ? port : 514,
+    };
+    strncpy(cfg.host, host, sizeof(cfg.host) - 1);
+    cfg.host[sizeof(cfg.host) - 1] = '\0';
+
+    return log_forward_apply_config(&cfg, persist);
+}
+
+void wifi_config_disable_log_stream(bool persist) {
+    portal_log_sink_config_t cfg = {
+        .enabled = false,
+        .host = {0},
+        .port = 514,
+    };
+    (void)log_forward_apply_config(&cfg, persist);
+}
+
+void wifi_config_get_log_stream(log_stream_config_t *config_out) {
+    if (!config_out) {
+        return;
+    }
+
+    portal_log_sink_config_t cfg;
+    portENTER_CRITICAL(&log_forward_lock);
+    cfg = log_sink_config;
+    portEXIT_CRITICAL(&log_forward_lock);
+
+    memset(config_out, 0, sizeof(*config_out));
+    config_out->enable_udp_sink = cfg.enabled;
+    config_out->udp_port = cfg.port;
+    strncpy(config_out->udp_host, cfg.host, sizeof(config_out->udp_host) - 1);
+    config_out->udp_host[sizeof(config_out->udp_host) - 1] = '\0';
 }
 
 esp_err_t wifi_config_trigger_display(void) {

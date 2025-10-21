@@ -59,9 +59,13 @@ typedef struct {
  */
 typedef struct {
     fluid_level_t fluid_level;
+    bool full_submerged;
     bool half_submerged;
+    bool low_submerged;
     bool empty_submerged;
+    bool full_signal_high;
     bool half_signal_high;
+    bool low_signal_high;
     bool empty_signal_high;
     uint32_t uptime_seconds;
     char power_source[16];

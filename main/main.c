@@ -3,12 +3,12 @@
  * @brief MatrixFluid - Vehicle Fluid Level Indicator Main Application
  *
  * ESP32-S3 based vehicle fluid level indicator with 8x8 RGB LED matrix display.
- * Features timed status cycles, two-level fluid sensing, Wi-Fi portal refresh, and safety-limited brightness.
+ * Features timed status cycles, multi-level fluid sensing, Wi-Fi portal refresh, and safety-limited brightness.
  *
  * Hardware:
  * - Waveshare ESP32-S3-Matrix board
  * - 8x8 WS2812B LED matrix (GPIO14)
- * - Fluid sensors (GPIO2=half-full, GPIO3=near-empty)
+ * - Fluid sensors (GPIO4=full, GPIO2=above-half, GPIO5=below-half, GPIO3=reserve)
  * - Onboard QMI8658 accelerometer (unused; demo mode uses USB host detection)
  *
  * Safety:
@@ -104,7 +104,9 @@ static void fluid_level_changed_callback(fluid_level_t new_level, fluid_level_t 
 
     // Log critical fluid level
     if (new_level == FLUID_LEVEL_NEAR_EMPTY) {
-        ESP_LOGW(TAG, "WARNING: Fluid level critically low!");
+        ESP_LOGW(TAG, "WARNING: Fluid level approaching reserve threshold!");
+    } else if (new_level == FLUID_LEVEL_EMPTY) {
+        ESP_LOGW(TAG, "CRITICAL: Fluid level below reserve threshold!");
     } else if (new_level == FLUID_LEVEL_SENSOR_ERROR) {
         ESP_LOGE(TAG, "ERROR: Fluid sensor malfunction detected!");
     }
@@ -185,8 +187,10 @@ static void print_system_info(void) {
 
     // Print pin assignments
     printf("Pin Assignments:\n");
-    printf("  GPIO2: Fluid sensor 1 (half-full)\n");
-    printf("  GPIO3: Fluid sensor 2 (near-empty)\n");
+    printf("  GPIO%d: Fluid sensor (full)\n", FLUID_FULL_SENSOR_GPIO);
+    printf("  GPIO%d: Fluid sensor (above half)\n", FLUID_HALF_SENSOR_GPIO);
+    printf("  GPIO%d: Fluid sensor (below half)\n", FLUID_LOW_SENSOR_GPIO);
+    printf("  GPIO%d: Fluid sensor (reserve/near-empty)\n", FLUID_EMPTY_SENSOR_GPIO);
     printf("  GPIO14: LED matrix data\n");
     printf("  5V/GND: Power (5V buck converter recommended)\n");
     printf("\n");
@@ -207,9 +211,13 @@ static void publish_portal_status_snapshot(void) {
     status.fluid_level = g_system.current_fluid_level;
     status.displayed_fluid_level = display_controller_get_current_level();
     if (raw_valid) {
+        status.full_sensor_submerged = raw_reading.full_sensor_submerged;
         status.half_sensor_submerged = raw_reading.half_sensor_submerged;
+        status.low_sensor_submerged = raw_reading.low_sensor_submerged;
         status.empty_sensor_submerged = raw_reading.empty_sensor_submerged;
+        status.full_sensor_signal_high = raw_reading.full_sensor_signal_high;
         status.half_sensor_signal_high = raw_reading.half_sensor_signal_high;
+        status.low_sensor_signal_high = raw_reading.low_sensor_signal_high;
         status.empty_sensor_signal_high = raw_reading.empty_sensor_signal_high;
     }
     status.display_active = display_controller_is_active();
@@ -224,9 +232,13 @@ static void publish_portal_status_snapshot(void) {
 
     alert_snapshot_t alert_snapshot = {
         .fluid_level = status.fluid_level,
+        .full_submerged = status.full_sensor_submerged,
         .half_submerged = status.half_sensor_submerged,
+        .low_submerged = status.low_sensor_submerged,
         .empty_submerged = status.empty_sensor_submerged,
+        .full_signal_high = status.full_sensor_signal_high,
         .half_signal_high = status.half_sensor_signal_high,
+        .low_signal_high = status.low_sensor_signal_high,
         .empty_signal_high = status.empty_sensor_signal_high,
         .uptime_seconds = status.uptime_seconds,
     };
@@ -333,6 +345,8 @@ static void system_monitor_task(void *pvParameters) {
         // Check for critical conditions
         if (g_system.current_fluid_level == FLUID_LEVEL_SENSOR_ERROR) {
             ESP_LOGW(TAG, "Sensor error condition persisting");
+        } else if (g_system.current_fluid_level == FLUID_LEVEL_EMPTY) {
+            ESP_LOGW(TAG, "Fluid level remains below reserve threshold");
         }
 
         vTaskDelayUntil(&last_wake_time, interval_ticks);
@@ -405,6 +419,11 @@ void app_main(void) {
             .display_brightness = 3,
             .manual_trigger_enabled = true,
             .auto_brightness = false
+        },
+        .log_stream = {
+            .enable_udp_sink = false,
+            .udp_host = "",
+            .udp_port = 514
         }
     };
 

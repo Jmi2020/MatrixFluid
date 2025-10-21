@@ -2,9 +2,11 @@
  * @file fluid_sensors.h
  * @brief Fluid Level Sensors Interface
  *
- * Manages two digital fluid level sensors:
- * - Half-full sensor (GPIO2)
- * - Near-empty sensor (GPIO3)
+ * Manages four digital fluid level sensors (see FLUID_*_SENSOR_GPIO for pin assignments):
+ * - Full sensor (highest threshold)
+ * - Above-half sensor
+ * - Below-half sensor
+ * - Reserve / near-empty sensor
  *
  * Provides debounced readings and fluid level state determination.
  */
@@ -19,9 +21,21 @@
 extern "C" {
 #endif
 
-// GPIO pin assignments
-#define FLUID_HALF_SENSOR_GPIO    2    ///< Half-full sensor GPIO
-#define FLUID_EMPTY_SENSOR_GPIO   3    ///< Near-empty sensor GPIO
+// GPIO pin assignments (override at compile time if different pins are required)
+#ifndef FLUID_FULL_SENSOR_GPIO
+#define FLUID_FULL_SENSOR_GPIO    4    ///< Top sensor (tank full threshold)
+#endif
+#ifndef FLUID_HALF_SENSOR_GPIO
+#define FLUID_HALF_SENSOR_GPIO    2    ///< Upper-mid sensor (~above half)
+#endif
+#ifndef FLUID_LOW_SENSOR_GPIO
+#define FLUID_LOW_SENSOR_GPIO     5    ///< Lower-mid sensor (~below half)
+#endif
+#ifndef FLUID_EMPTY_SENSOR_GPIO
+#define FLUID_EMPTY_SENSOR_GPIO   3    ///< Reserve/near-empty sensor
+#endif
+
+#define FLUID_SENSOR_COUNT        4    ///< Total supported sensor inputs
 
 // Timing constants
 #define FLUID_DEBOUNCE_MS         100  ///< Debounce time for sensor readings
@@ -31,19 +45,25 @@ extern "C" {
  * @brief Fluid level states based on sensor combination
  */
 typedef enum {
-    FLUID_LEVEL_ABOVE_HALF = 0,   ///< Both sensors HIGH (tank >50%)
-    FLUID_LEVEL_BELOW_HALF = 1,   ///< Half sensor LOW, Empty sensor HIGH (20-50%)
-    FLUID_LEVEL_NEAR_EMPTY = 2,   ///< Both sensors LOW (tank <20%)
-    FLUID_LEVEL_SENSOR_ERROR = 3  ///< Invalid sensor combination
+    FLUID_LEVEL_FULL = 0,         ///< Top sensor HIGH (tank at maximum threshold)
+    FLUID_LEVEL_ABOVE_HALF = 1,   ///< Upper-mid sensor HIGH (tank > ~50%)
+    FLUID_LEVEL_BELOW_HALF = 2,   ///< Lower-mid sensor HIGH (tank between reserve & ~50%)
+    FLUID_LEVEL_NEAR_EMPTY = 3,   ///< Reserve sensor HIGH (tank just above empty)
+    FLUID_LEVEL_EMPTY = 4,        ///< No sensors HIGH (tank below reserve threshold)
+    FLUID_LEVEL_SENSOR_ERROR = 5  ///< Invalid sensor combination detected
 } fluid_level_t;
 
 /**
  * @brief Raw sensor reading structure
  */
 typedef struct {
+    bool full_sensor_submerged;       ///< Full-level sensor (true = submerged / signal HIGH)
     bool half_sensor_submerged;      ///< Half-full sensor (true = float submerged / signal HIGH)
+    bool low_sensor_submerged;       ///< Lower-mid sensor (true = submerged / signal HIGH)
     bool empty_sensor_submerged;     ///< Near-empty sensor (true = float submerged / signal HIGH)
+    bool full_sensor_signal_high;    ///< Raw GPIO reading for full sensor is HIGH (>=3V)
     bool half_sensor_signal_high;    ///< Raw GPIO reading is HIGH (>=3V)
+    bool low_sensor_signal_high;     ///< Raw GPIO reading for lower-mid sensor is HIGH (>=3V)
     bool empty_sensor_signal_high;   ///< Raw GPIO reading is HIGH (>=3V)
     uint32_t timestamp_ms;           ///< Reading timestamp in milliseconds
     bool is_valid;                   ///< Reading validity flag

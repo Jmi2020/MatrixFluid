@@ -4,6 +4,7 @@
  */
 
 #include "fluid_sensors.h"
+#include <string.h>
 #include "esp_log.h"
 #include "esp_check.h"
 #include "driver/gpio.h"
@@ -33,21 +34,51 @@ static struct {
     bool monitoring_active;
 } fluid_state = {0};
 
+static const gpio_num_t SENSOR_GPIO_MAP[FLUID_SENSOR_COUNT] = {
+    FLUID_FULL_SENSOR_GPIO,
+    FLUID_HALF_SENSOR_GPIO,
+    FLUID_LOW_SENSOR_GPIO,
+    FLUID_EMPTY_SENSOR_GPIO
+};
+
 /**
  * @brief Determine fluid level from sensor readings
  */
-static fluid_level_t determine_level(bool half_submerged, bool empty_submerged) {
-    if (half_submerged && empty_submerged) {
-        return FLUID_LEVEL_ABOVE_HALF;
-    } else if (!half_submerged && empty_submerged) {
-        return FLUID_LEVEL_BELOW_HALF;
-    } else if (!half_submerged && !empty_submerged) {
-        return FLUID_LEVEL_NEAR_EMPTY;
-    } else {
-        // half_submerged == true && empty_submerged == false
-        // This is physically impossible - empty sensor should be HIGH if half sensor is HIGH
+static fluid_level_t determine_level(const fluid_reading_t *reading) {
+    if (!reading) {
         return FLUID_LEVEL_SENSOR_ERROR;
     }
+
+    bool sensors[FLUID_SENSOR_COUNT] = {
+        reading->full_sensor_submerged,
+        reading->half_sensor_submerged,
+        reading->low_sensor_submerged,
+        reading->empty_sensor_submerged
+    };
+
+    bool seen_dry = false;
+    for (int i = 0; i < FLUID_SENSOR_COUNT; ++i) {
+        if (!sensors[i]) {
+            seen_dry = true;
+        } else if (seen_dry) {
+            // Higher sensor reports dry but lower sensor still wet -> inconsistent
+            return FLUID_LEVEL_SENSOR_ERROR;
+        }
+    }
+
+    if (sensors[0]) {
+        return FLUID_LEVEL_FULL;
+    }
+    if (sensors[1]) {
+        return FLUID_LEVEL_ABOVE_HALF;
+    }
+    if (sensors[2]) {
+        return FLUID_LEVEL_BELOW_HALF;
+    }
+    if (sensors[3]) {
+        return FLUID_LEVEL_NEAR_EMPTY;
+    }
+    return FLUID_LEVEL_EMPTY;
 }
 
 /**
@@ -64,8 +95,7 @@ static void fluid_monitor_task(void *pvParameters) {
         esp_err_t ret = fluid_sensors_read_raw(&reading);
 
         if (ret == ESP_OK && reading.is_valid) {
-            fluid_level_t new_level = determine_level(reading.half_sensor_submerged,
-                                                     reading.empty_sensor_submerged);
+            fluid_level_t new_level = determine_level(&reading);
 
             if (xSemaphoreTake(fluid_state.mutex, pdMS_TO_TICKS(10)) == pdTRUE) {
                 if (new_level != fluid_state.current_level) {
@@ -130,8 +160,13 @@ esp_err_t fluid_sensors_init(const fluid_config_t *config) {
     ESP_RETURN_ON_FALSE(fluid_state.mutex, ESP_ERR_NO_MEM, TAG, "Failed to create mutex");
 
     // Configure GPIO pins
+    uint64_t pin_mask = 0;
+    for (int i = 0; i < FLUID_SENSOR_COUNT; ++i) {
+        pin_mask |= (1ULL << SENSOR_GPIO_MAP[i]);
+    }
+
     gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << FLUID_HALF_SENSOR_GPIO) | (1ULL << FLUID_EMPTY_SENSOR_GPIO),
+        .pin_bit_mask = pin_mask,
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_ENABLE,  // Bias low until sensor drives line high
@@ -156,8 +191,7 @@ esp_err_t fluid_sensors_init(const fluid_config_t *config) {
     fluid_reading_t initial_reading;
     ret = fluid_sensors_read_raw(&initial_reading);
     if (ret == ESP_OK && initial_reading.is_valid) {
-        fluid_state.stable_level = determine_level(initial_reading.half_sensor_submerged,
-                                                   initial_reading.empty_sensor_submerged);
+        fluid_state.stable_level = determine_level(&initial_reading);
         fluid_state.current_level = fluid_state.stable_level;
         fluid_state.level_change_time_ms = initial_reading.timestamp_ms;
     }
@@ -198,14 +232,21 @@ esp_err_t fluid_sensors_read_raw(fluid_reading_t *reading) {
     ESP_RETURN_ON_FALSE(fluid_state.initialized, ESP_ERR_INVALID_STATE, TAG, "not initialized");
     ESP_RETURN_ON_FALSE(reading, ESP_ERR_INVALID_ARG, TAG, "reading is NULL");
 
-    int half_raw = gpio_get_level(FLUID_HALF_SENSOR_GPIO);
-    int empty_raw = gpio_get_level(FLUID_EMPTY_SENSOR_GPIO);
+    memset(reading, 0, sizeof(*reading));
 
-    // Floats drive the line HIGH (~3V) when liquid is present.
-    reading->half_sensor_signal_high = (half_raw != 0);
-    reading->empty_sensor_signal_high = (empty_raw != 0);
-    reading->half_sensor_submerged = reading->half_sensor_signal_high;
-    reading->empty_sensor_submerged = reading->empty_sensor_signal_high;
+    bool signals[FLUID_SENSOR_COUNT] = {0};
+    for (int i = 0; i < FLUID_SENSOR_COUNT; ++i) {
+        signals[i] = gpio_get_level(SENSOR_GPIO_MAP[i]) != 0;
+    }
+
+    reading->full_sensor_signal_high = signals[0];
+    reading->full_sensor_submerged = signals[0];
+    reading->half_sensor_signal_high = signals[1];
+    reading->half_sensor_submerged = signals[1];
+    reading->low_sensor_signal_high = signals[2];
+    reading->low_sensor_submerged = signals[2];
+    reading->empty_sensor_signal_high = signals[3];
+    reading->empty_sensor_submerged = signals[3];
     reading->timestamp_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
     reading->is_valid = true;
 
@@ -279,9 +320,11 @@ esp_err_t fluid_sensors_stop_monitoring(void) {
 
 const char* fluid_level_to_string(fluid_level_t level) {
     switch (level) {
+        case FLUID_LEVEL_FULL:       return "FULL";
         case FLUID_LEVEL_ABOVE_HALF:  return "ABOVE_HALF";
         case FLUID_LEVEL_BELOW_HALF:  return "BELOW_HALF";
         case FLUID_LEVEL_NEAR_EMPTY:  return "NEAR_EMPTY";
+        case FLUID_LEVEL_EMPTY:       return "EMPTY";
         case FLUID_LEVEL_SENSOR_ERROR: return "SENSOR_ERROR";
         default:                      return "UNKNOWN";
     }
@@ -310,8 +353,9 @@ esp_err_t fluid_sensors_deinit(void) {
     fluid_sensors_stop_monitoring();
 
     // Reset GPIO pins
-    gpio_reset_pin(FLUID_HALF_SENSOR_GPIO);
-    gpio_reset_pin(FLUID_EMPTY_SENSOR_GPIO);
+    for (int i = 0; i < FLUID_SENSOR_COUNT; ++i) {
+        gpio_reset_pin(SENSOR_GPIO_MAP[i]);
+    }
 
     // Cleanup mutex
     if (fluid_state.mutex) {

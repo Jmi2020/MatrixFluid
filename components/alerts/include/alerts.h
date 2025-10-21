@@ -59,6 +59,7 @@ typedef struct {
  */
 typedef struct {
     fluid_level_t fluid_level;
+    uint8_t fluid_percentage;
     bool full_submerged;
     bool half_submerged;
     bool low_submerged;

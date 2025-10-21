@@ -421,12 +421,14 @@ static esp_err_t alerts_dispatch(const alert_config_t *cfg, const alert_snapshot
     const char *level_str = fluid_level_to_string(snapshot->fluid_level);
     char payload[512];
     snprintf(payload, sizeof(payload),
-             "{\"recipient\":\"%s\",\"fluid_level\":\"%s\",\"full_sensor_submerged\":%s,"
+             "{\"recipient\":\"%s\",\"fluid_level\":\"%s\",\"fluid_percentage\":%u,"
+             "\"full_sensor_submerged\":%s,"
              "\"half_sensor_submerged\":%s,\"low_sensor_submerged\":%s,\"empty_sensor_submerged\":%s,"
              "\"full_signal_high\":%s,\"half_signal_high\":%s,\"low_signal_high\":%s,\"empty_signal_high\":%s,"
              "\"uptime_seconds\":%lu,\"power_source\":\"%s\"}",
              cfg->recipient,
              level_str ? level_str : "UNKNOWN",
+             (unsigned)snapshot->fluid_percentage,
              snapshot->full_submerged ? "true" : "false",
              snapshot->half_submerged ? "true" : "false",
              snapshot->low_submerged ? "true" : "false",

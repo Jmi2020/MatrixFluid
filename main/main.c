@@ -93,8 +93,11 @@ static void display_event_callback(trigger_source_t source, fluid_level_t fluid_
  * @brief Fluid level change callback
  */
 static void fluid_level_changed_callback(fluid_level_t new_level, fluid_level_t old_level, void *user_ctx) {
-    ESP_LOGI(TAG, "Fluid level changed: %s -> %s",
-             fluid_level_to_string(old_level), fluid_level_to_string(new_level));
+    uint8_t new_percent = fluid_level_to_percent(new_level);
+    uint8_t old_percent = fluid_level_to_percent(old_level);
+    ESP_LOGI(TAG, "Fluid level changed: %s (%u%%) -> %s (%u%%)",
+             fluid_level_to_string(old_level), (unsigned)old_percent,
+             fluid_level_to_string(new_level), (unsigned)new_percent);
 
     g_system.previous_fluid_level = old_level;
     g_system.current_fluid_level = new_level;
@@ -210,6 +213,7 @@ static void publish_portal_status_snapshot(void) {
     wifi_portal_status_t status = {0};
     status.fluid_level = g_system.current_fluid_level;
     status.displayed_fluid_level = display_controller_get_current_level();
+    status.fluid_percentage = fluid_level_to_percent(status.fluid_level);
     if (raw_valid) {
         status.full_sensor_submerged = raw_reading.full_sensor_submerged;
         status.half_sensor_submerged = raw_reading.half_sensor_submerged;
@@ -232,6 +236,7 @@ static void publish_portal_status_snapshot(void) {
 
     alert_snapshot_t alert_snapshot = {
         .fluid_level = status.fluid_level,
+        .fluid_percentage = status.fluid_percentage,
         .full_submerged = status.full_sensor_submerged,
         .half_submerged = status.half_sensor_submerged,
         .low_submerged = status.low_sensor_submerged,
@@ -296,9 +301,10 @@ static void system_monitor_task(void *pvParameters) {
         display_stats_t display_stats;
         display_controller_get_stats(&display_stats);
 
-        ESP_LOGI(TAG, "Status: State=%s, Fluid=%s, Demo=%s, WiFi=%s, Displays=%lu, WebTriggers=%lu, Errors=%lu",
+        ESP_LOGI(TAG, "Status: State=%s, Fluid=%s (%u%%), Demo=%s, WiFi=%s, Displays=%lu, WebTriggers=%lu, Errors=%lu",
                  state_name,
                  fluid_level_to_string(g_system.current_fluid_level),
+                 (unsigned)fluid_level_to_percent(g_system.current_fluid_level),
                  g_system.demo_mode_enabled ? "YES" : "NO",
                  g_system.wifi_enabled ? "YES" : "NO",
                  display_stats.total_displays,

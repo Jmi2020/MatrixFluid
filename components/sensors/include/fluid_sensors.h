@@ -157,6 +157,14 @@ uint32_t fluid_sensors_get_error_count(void);
  */
 esp_err_t fluid_sensors_deinit(void);
 
+/**
+ * @brief Convert a fluid level enumeration to an approximate percentage.
+ *
+ * @param level Fluid level enumeration
+ * @return uint8_t Percentage (0, 20, 40, 60, 80). Returns 0 for unknown/error.
+ */
+uint8_t fluid_level_to_percent(fluid_level_t level);
+
 #ifdef __cplusplus
 }
 #endif

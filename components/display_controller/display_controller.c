@@ -75,39 +75,25 @@ static led_pattern_t fluid_level_to_pattern(fluid_level_t level) {
 
 static void build_caption(fluid_level_t level, char *buffer, size_t len,
                   led_color_t *color_out) {
-    const char *text = "STATUS";
     led_color_t color = LED_COLOR_GREEN;
+    uint8_t pct = fluid_level_to_percent(level);
 
-    switch (level) {
-        case FLUID_LEVEL_FULL:
-            text = "TANK FULL";
-            color = LED_COLOR_GREEN;
-            break;
-        case FLUID_LEVEL_ABOVE_HALF:
-            text = "LEVEL OK";
-            color = LED_COLOR_GREEN;
-            break;
-        case FLUID_LEVEL_BELOW_HALF:
-            text = "BELOW HALF";
-            color = LED_COLOR_YELLOW;
-            break;
-        case FLUID_LEVEL_NEAR_EMPTY:
-            text = "RESERVE LOW";
-            color = LED_COLOR_RED;
-            break;
-        case FLUID_LEVEL_EMPTY:
-            text = "TANK EMPTY";
-            color = LED_COLOR_RED;
-            break;
-        case FLUID_LEVEL_SENSOR_ERROR:
-        default:
-            text = "SENSOR ERR";
-            color = LED_COLOR_RED;
-            break;
+    if (pct >= 60) {
+        color = LED_COLOR_GREEN;
+    } else if (pct >= 40) {
+        color = LED_COLOR_YELLOW;
+    } else {
+        color = LED_COLOR_RED;
     }
 
     if (buffer && len > 0) {
-        snprintf(buffer, len, "%s", text);
+        if (pct || level == FLUID_LEVEL_FULL || level == FLUID_LEVEL_EMPTY) {
+            snprintf(buffer, len, "%u%%", pct);
+        } else if (level == FLUID_LEVEL_SENSOR_ERROR) {
+            snprintf(buffer, len, "%s", "SENSOR ERR");
+        } else {
+            snprintf(buffer, len, "%s", "STATUS");
+        }
         for (char *p = buffer; *p; ++p) {
             if (*p >= 'a' && *p <= 'z') {
                 *p = (char)(*p - 32);

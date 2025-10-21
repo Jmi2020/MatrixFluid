@@ -368,3 +368,21 @@ esp_err_t fluid_sensors_deinit(void) {
 
     return ESP_OK;
 }
+
+uint8_t fluid_level_to_percent(fluid_level_t level) {
+    switch (level) {
+        case FLUID_LEVEL_FULL:
+            return 80;
+        case FLUID_LEVEL_ABOVE_HALF:
+            return 60;
+        case FLUID_LEVEL_BELOW_HALF:
+            return 40;
+        case FLUID_LEVEL_NEAR_EMPTY:
+            return 20;
+        case FLUID_LEVEL_EMPTY:
+            return 0;
+        case FLUID_LEVEL_SENSOR_ERROR:
+        default:
+            return 0;
+    }
+}

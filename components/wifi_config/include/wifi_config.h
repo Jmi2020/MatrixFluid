@@ -74,6 +74,7 @@ typedef struct {
 typedef struct {
     fluid_level_t fluid_level;          ///< Latest fluid level
     fluid_level_t displayed_fluid_level;///< Level currently shown on matrix
+    uint8_t fluid_percentage;           ///< Approximate percentage representation
     bool full_sensor_submerged;         ///< Full sensor indicates liquid
     bool half_sensor_submerged;         ///< Half sensor indicates liquid
     bool low_sensor_submerged;          ///< Lower-mid sensor indicates liquid

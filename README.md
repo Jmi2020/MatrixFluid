@@ -39,10 +39,10 @@ A safety-critical embedded device for monitoring vehicle fluid levels using the 
 
 1. **Hardware Setup**
    ```
-   GPIO4 ← Full sensor (drives 3V3 when submerged)
-   GPIO2 ← Above-half sensor (drives 3V3 when submerged)
-   GPIO5 ← Below-half sensor (drives 3V3 when submerged)
-   GPIO3 ← Reserve/near-empty sensor (drives 3V3 when submerged)
+   Sensor 1 (20%) → GPIO3 (drives 3V3 when submerged)
+   Sensor 2 (40%) → GPIO5 (drives 3V3 when submerged)
+   Sensor 3 (60%) → GPIO2 (drives 3V3 when submerged)
+   Sensor 4 (80%) → GPIO4 (drives 3V3 when submerged)
    5V ← Buck converter output
    GND ← Common ground
    ```

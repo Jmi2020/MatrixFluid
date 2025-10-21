@@ -609,6 +609,18 @@ static void log_forward_init(void) {
         return;
     }
 
+    portENTER_CRITICAL(&log_forward_lock);
+    log_forward.queue = queue;
+    log_forward.network_ready = false;
+    log_forward.destination_valid = false;
+    log_forward.destination_dirty = true;
+    log_forward.socket_fd = -1;
+    memset(&log_forward.dest_addr, 0, sizeof(log_forward.dest_addr));
+    log_forward.dropped = 0;
+    log_forward.last_dns_attempt = 0;
+    log_forward.last_socket_error = 0;
+    portEXIT_CRITICAL(&log_forward_lock);
+
     TaskHandle_t task_handle = NULL;
     BaseType_t created = xTaskCreatePinnedToCore(log_forward_task,
                                                  "log_forward",
@@ -620,6 +632,9 @@ static void log_forward_init(void) {
     if (created != pdPASS) {
         ESP_LOGW(TAG, "Failed to start log forward task");
         vQueueDelete(queue);
+        portENTER_CRITICAL(&log_forward_lock);
+        log_forward.queue = NULL;
+        portEXIT_CRITICAL(&log_forward_lock);
         return;
     }
 
@@ -627,14 +642,6 @@ static void log_forward_init(void) {
     log_forward.queue = queue;
     log_forward.task = task_handle;
     log_forward.initialized = true;
-    log_forward.network_ready = false;
-    log_forward.destination_valid = false;
-    log_forward.destination_dirty = true;
-    log_forward.socket_fd = -1;
-    memset(&log_forward.dest_addr, 0, sizeof(log_forward.dest_addr));
-    log_forward.dropped = 0;
-    log_forward.last_dns_attempt = 0;
-    log_forward.last_socket_error = 0;
     portEXIT_CRITICAL(&log_forward_lock);
 
     log_forward_fill_portal_status();
@@ -707,7 +714,17 @@ static void log_forward_task(void *arg) {
 
     log_forward_message_t msg;
     while (1) {
-        if (xQueueReceive(log_forward.queue, &msg, portMAX_DELAY) != pdTRUE) {
+        QueueHandle_t queue = NULL;
+        portENTER_CRITICAL(&log_forward_lock);
+        queue = log_forward.queue;
+        portEXIT_CRITICAL(&log_forward_lock);
+
+        if (!queue) {
+            vTaskDelay(pdMS_TO_TICKS(200));
+            continue;
+        }
+
+        if (xQueueReceive(queue, &msg, portMAX_DELAY) != pdTRUE) {
             continue;
         }
 

@@ -56,6 +56,7 @@ static led_pattern_t fluid_level_to_pattern(fluid_level_t level);
 static void display_animation_task(void *param);
 static void build_caption(fluid_level_t level, char *buffer, size_t len,
                           led_color_t *color_out);
+static void start_caption_animation(void);
 static void draw_caption_snapshot(void);
 
 /**
@@ -73,8 +74,28 @@ static led_pattern_t fluid_level_to_pattern(fluid_level_t level) {
     }
 }
 
+static void uppercase_copy(char *dest, size_t dest_len, const char *src) {
+    if (!dest || dest_len == 0) {
+        return;
+    }
+    if (!src) {
+        dest[0] = '\0';
+        return;
+    }
+
+    size_t i = 0;
+    for (; i + 1 < dest_len && src[i]; ++i) {
+        char c = src[i];
+        if (c >= 'a' && c <= 'z') {
+            c = (char)(c - ('a' - 'A'));
+        }
+        dest[i] = c;
+    }
+    dest[i] = '\0';
+}
+
 static void build_caption(fluid_level_t level, char *buffer, size_t len,
-                  led_color_t *color_out) {
+                          led_color_t *color_out) {
     led_color_t color = LED_COLOR_GREEN;
     uint8_t pct = fluid_level_to_percent(level);
 
@@ -183,41 +204,7 @@ static esp_err_t activate_display(trigger_source_t source) {
              g_display_ctrl.caption_color.g,
              g_display_ctrl.caption_color.b);
 
-    if (g_display_ctrl.animation_task) {
-        vTaskDelete(g_display_ctrl.animation_task);
-        g_display_ctrl.animation_task = NULL;
-    }
-
-    TaskHandle_t animation_handle = NULL;
-
-#if (configSUPPORT_STATIC_ALLOCATION == 1)
-    animation_handle = xTaskCreateStatic(display_animation_task,
-                                         "disp_scroll",
-                                         DISPLAY_ANIMATION_TASK_STACK_WORDS,
-                                         NULL,
-                                         4,
-                                         g_display_ctrl.animation_stack,
-                                         &g_display_ctrl.animation_tcb);
-#endif
-
-    if (animation_handle == NULL) {
-        BaseType_t created = xTaskCreate(display_animation_task,
-                                         "disp_scroll",
-                                         2048,
-                                         NULL,
-                                         4,
-                                         &animation_handle);
-        if (created != pdPASS) {
-            ESP_LOGE(TAG, "Failed to create display animation task");
-            animation_handle = NULL;
-        }
-    }
-
-    if (animation_handle) {
-        g_display_ctrl.animation_task = animation_handle;
-    } else {
-        draw_caption_snapshot();
-    }
+    start_caption_animation();
 
     // Start display off timer
     if (g_display_ctrl.config.display_duration_ms > 0) {
@@ -334,6 +321,44 @@ static void draw_caption_snapshot(void) {
                                                g_display_ctrl.caption_brightness);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Fallback caption draw failed: %s", esp_err_to_name(err));
+    }
+}
+
+static void start_caption_animation(void) {
+    if (g_display_ctrl.animation_task) {
+        vTaskDelete(g_display_ctrl.animation_task);
+        g_display_ctrl.animation_task = NULL;
+    }
+
+    TaskHandle_t animation_handle = NULL;
+
+#if (configSUPPORT_STATIC_ALLOCATION == 1)
+    animation_handle = xTaskCreateStatic(display_animation_task,
+                                         "disp_scroll",
+                                         DISPLAY_ANIMATION_TASK_STACK_WORDS,
+                                         NULL,
+                                         4,
+                                         g_display_ctrl.animation_stack,
+                                         &g_display_ctrl.animation_tcb);
+#endif
+
+    if (animation_handle == NULL) {
+        BaseType_t created = xTaskCreate(display_animation_task,
+                                         "disp_scroll",
+                                         2048,
+                                         NULL,
+                                         4,
+                                         &animation_handle);
+        if (created != pdPASS) {
+            ESP_LOGE(TAG, "Failed to create display animation task");
+            animation_handle = NULL;
+        }
+    }
+
+    if (animation_handle) {
+        g_display_ctrl.animation_task = animation_handle;
+    } else {
+        draw_caption_snapshot();
     }
 }
 
@@ -482,6 +507,56 @@ esp_err_t display_controller_trigger_manual(void) {
     return activate_display(TRIGGER_SOURCE_MANUAL);
 }
 
+esp_err_t display_controller_show_message(const char *text,
+                                          led_color_t color,
+                                          uint32_t duration_ms) {
+    if (!g_display_ctrl.initialized || !g_display_ctrl.started) {
+        ESP_LOGE(TAG, "Display controller not ready for message");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!text || !text[0]) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (duration_ms == 0) {
+        duration_ms = g_display_ctrl.config.display_duration_ms;
+    }
+
+    if (duration_ms == 0) {
+        duration_ms = 20000; // fallback to 20s if configuration is zero
+    }
+
+    g_display_ctrl.display_active = true;
+    g_display_ctrl.display_start_time = esp_timer_get_time() / 1000; // ms
+    g_display_ctrl.stats.total_displays++;
+    g_display_ctrl.stats.last_display_time = g_display_ctrl.display_start_time;
+    g_display_ctrl.stats.last_trigger = TRIGGER_SOURCE_SYSTEM;
+
+    uppercase_copy(g_display_ctrl.caption_text,
+                   sizeof(g_display_ctrl.caption_text),
+                   text);
+    g_display_ctrl.caption_color = color;
+    g_display_ctrl.caption_brightness = g_display_ctrl.config.brightness;
+
+    esp_timer_stop(g_display_ctrl.display_off_timer);
+    led_matrix_clear();
+    start_caption_animation();
+
+    if (duration_ms > 0) {
+        esp_timer_start_once(g_display_ctrl.display_off_timer,
+                             duration_ms * 1000);
+    }
+
+    if (g_display_ctrl.callback) {
+        g_display_ctrl.callback(TRIGGER_SOURCE_SYSTEM,
+                                g_display_ctrl.current_fluid_level,
+                                g_display_ctrl.callback_ctx);
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t display_controller_set_config(const display_controller_config_t *config) {
     if (!config) {
         return ESP_ERR_INVALID_ARG;
@@ -621,6 +696,7 @@ const char* display_controller_trigger_to_string(trigger_source_t source) {
         case TRIGGER_SOURCE_PERIODIC:     return "PERIODIC";
         case TRIGGER_SOURCE_FLUID_CHANGE: return "FLUID_CHANGE";
         case TRIGGER_SOURCE_STARTUP:      return "STARTUP";
+        case TRIGGER_SOURCE_SYSTEM:       return "SYSTEM";
         case TRIGGER_SOURCE_DEMO:         return "DEMO";
         default:                          return "UNKNOWN";
     }

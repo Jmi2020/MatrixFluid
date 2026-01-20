@@ -178,7 +178,7 @@ build uf2-app: phony CMakeFiles/uf2-app
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh CMakeFiles/edit_cache.dir/utility.sh d58a27c6751aee2d
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -190,7 +190,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh CMakeFiles/rebuild_cache.dir/utility.sh 2e148cff6e5386a9
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -202,7 +202,7 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 # Custom command for CMakeFiles/menuconfig
 
 build CMakeFiles/menuconfig | ${cmake_ninja_workdir}CMakeFiles/menuconfig: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python /Users/silverlinings/esp/v5.5/esp-idf/tools/kconfig_new/prepare_kconfig_files.py --list-separator=semicolon --env-file /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/config.env && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python -m kconfgen --list-separator=semicolon --kconfig /Users/silverlinings/esp/v5.5/esp-idf/Kconfig --sdkconfig-rename /Users/silverlinings/esp/v5.5/esp-idf/sdkconfig.rename --config /Users/silverlinings/Desktop/Coding/MatrixFluid/sdkconfig --env IDF_MINIMAL_BUILD=n --env-file /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/config.env --env IDF_TARGET=esp32s3 --env IDF_TOOLCHAIN=gcc --env IDF_ENV_FPGA= --env IDF_INIT_VERSION=5.5.0 --dont-write-deprecated --output config /Users/silverlinings/Desktop/Coding/MatrixFluid/sdkconfig && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python /Users/silverlinings/esp/v5.5/esp-idf/tools/check_term.py && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -E env COMPONENT_KCONFIGS_SOURCE_FILE=/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/kconfigs.in COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/kconfigs_projbuild.in KCONFIG_CONFIG=/Users/silverlinings/Desktop/Coding/MatrixFluid/sdkconfig IDF_TARGET=esp32s3 IDF_TOOLCHAIN=gcc IDF_ENV_FPGA= IDF_INIT_VERSION=5.5.0 IDF_MINIMAL_BUILD=n /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python -m menuconfig /Users/silverlinings/esp/v5.5/esp-idf/Kconfig && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python -m kconfgen --list-separator=semicolon --kconfig /Users/silverlinings/esp/v5.5/esp-idf/Kconfig --sdkconfig-rename /Users/silverlinings/esp/v5.5/esp-idf/sdkconfig.rename --config /Users/silverlinings/Desktop/Coding/MatrixFluid/sdkconfig --env IDF_MINIMAL_BUILD=n --env-file /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/config.env --env IDF_TARGET=esp32s3 --env IDF_TOOLCHAIN=gcc --env IDF_ENV_FPGA= --env IDF_INIT_VERSION=5.5.0 --output config /Users/silverlinings/Desktop/Coding/MatrixFluid/sdkconfig
+  COMMAND = /bin/sh CMakeFiles/menuconfig-bced083.sh ecb01ab4c3516306
   pool = console
 
 
@@ -210,7 +210,7 @@ build CMakeFiles/menuconfig | ${cmake_ninja_workdir}CMakeFiles/menuconfig: CUSTO
 # Custom command for CMakeFiles/confserver
 
 build CMakeFiles/confserver | ${cmake_ninja_workdir}CMakeFiles/confserver: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python /Users/silverlinings/esp/v5.5/esp-idf/tools/kconfig_new/prepare_kconfig_files.py --list-separator=semicolon --env-file /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/config.env && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python -m kconfserver --env-file /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/config.env --kconfig /Users/silverlinings/esp/v5.5/esp-idf/Kconfig --sdkconfig-rename /Users/silverlinings/esp/v5.5/esp-idf/sdkconfig.rename --config /Users/silverlinings/Desktop/Coding/MatrixFluid/sdkconfig
+  COMMAND = /bin/sh CMakeFiles/confserver-ad6776d.sh f8ec1511b2eb52b0
   pool = console
 
 
@@ -218,7 +218,7 @@ build CMakeFiles/confserver | ${cmake_ninja_workdir}CMakeFiles/confserver: CUSTO
 # Custom command for CMakeFiles/save-defconfig
 
 build CMakeFiles/save-defconfig | ${cmake_ninja_workdir}CMakeFiles/save-defconfig: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python /Users/silverlinings/esp/v5.5/esp-idf/tools/kconfig_new/prepare_kconfig_files.py --list-separator=semicolon --env-file /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/config.env && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python -m kconfgen --list-separator=semicolon --kconfig /Users/silverlinings/esp/v5.5/esp-idf/Kconfig --sdkconfig-rename /Users/silverlinings/esp/v5.5/esp-idf/sdkconfig.rename --config /Users/silverlinings/Desktop/Coding/MatrixFluid/sdkconfig --env IDF_MINIMAL_BUILD=n --env-file /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/config.env --dont-write-deprecated --output savedefconfig /Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject/sdkconfig.defaults
+  COMMAND = /bin/sh CMakeFiles/save-defconfig-261bacf.sh e1f9ea9ac74b4085
   pool = console
 
 
@@ -232,7 +232,7 @@ build CMakeFiles/gen_project_binary | ${cmake_ninja_workdir}CMakeFiles/gen_proje
 # Custom command for .bin_timestamp
 
 build .bin_timestamp | ${cmake_ninja_workdir}.bin_timestamp: CUSTOM_COMMAND bootloader.elf || _project_elf_src bootloader.elf esp-idf/bootloader_support/libbootloader_support.a esp-idf/efuse/libefuse.a esp-idf/esp_bootloader_format/libesp_bootloader_format.a esp-idf/esp_common/libesp_common.a esp-idf/esp_hw_support/libesp_hw_support.a esp-idf/esp_rom/libesp_rom.a esp-idf/esp_system/libesp_system.a esp-idf/hal/libhal.a esp-idf/log/liblog.a esp-idf/main/libmain.a esp-idf/micro-ecc/libmicro-ecc.a esp-idf/soc/libsoc.a esp-idf/spi_flash/libspi_flash.a esp-idf/xtensa/libxtensa.a
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python /Users/silverlinings/esp/v5.5/esp-idf/components/esptool_py/esptool/esptool.py --chip esp32s3 elf2image --flash_mode dio --flash_freq 80m --flash_size 2MB --min-rev-full 0 --max-rev-full 99 -o /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/bootloader.bin /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/bootloader.elf && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -E echo "Generated /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/bootloader.bin" && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -E md5sum /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/bootloader.bin > /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/.bin_timestamp
+  COMMAND = /bin/sh CMakeFiles/.bin_timestamp-6b55e48.sh 173d3a7fb8aa8046
   DESC = Generating binary image from built executable
   restat = 1
 
@@ -247,7 +247,7 @@ build CMakeFiles/app | ${cmake_ninja_workdir}CMakeFiles/app: phony || _project_e
 # Custom command for CMakeFiles/erase_flash
 
 build CMakeFiles/erase_flash | ${cmake_ninja_workdir}CMakeFiles/erase_flash: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/esp/v5.5/esp-idf/components/esptool_py && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -D IDF_PATH=/Users/silverlinings/esp/v5.5/esp-idf -D "SERIAL_TOOL=/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python;;/Users/silverlinings/esp/v5.5/esp-idf/components/esptool_py/esptool/esptool.py;--chip;esp32s3" -D SERIAL_TOOL_ARGS=erase_flash -P run_serial_tool.cmake
+  COMMAND = /bin/sh CMakeFiles/erase_flash-e79be5a.sh 353f179115f9fd9b
   pool = console
 
 
@@ -255,7 +255,7 @@ build CMakeFiles/erase_flash | ${cmake_ninja_workdir}CMakeFiles/erase_flash: CUS
 # Custom command for CMakeFiles/merge-bin
 
 build CMakeFiles/merge-bin | ${cmake_ninja_workdir}CMakeFiles/merge-bin: CUSTOM_COMMAND bootloader || _project_elf_src bootloader.elf esp-idf/bootloader_support/libbootloader_support.a esp-idf/efuse/libefuse.a esp-idf/esp_bootloader_format/libesp_bootloader_format.a esp-idf/esp_common/libesp_common.a esp-idf/esp_hw_support/libesp_hw_support.a esp-idf/esp_rom/libesp_rom.a esp-idf/esp_system/libesp_system.a esp-idf/hal/libhal.a esp-idf/log/liblog.a esp-idf/main/libmain.a esp-idf/micro-ecc/libmicro-ecc.a esp-idf/soc/libsoc.a esp-idf/spi_flash/libspi_flash.a esp-idf/xtensa/libxtensa.a gen_project_binary
-  COMMAND = cd /Users/silverlinings/esp/v5.5/esp-idf/components/esptool_py && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -D IDF_PATH=/Users/silverlinings/esp/v5.5/esp-idf -D "SERIAL_TOOL=/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python;;/Users/silverlinings/esp/v5.5/esp-idf/components/esptool_py/esptool/esptool.py;--chip;esp32s3" -D "SERIAL_TOOL_ARGS=merge_bin;-o;/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/merged-binary.bin;@/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/flash_args" -D WORKING_DIRECTORY=/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader -P run_serial_tool.cmake
+  COMMAND = /bin/sh CMakeFiles/merge-bin-431e238.sh cafd786df1480ccc
   pool = console
 
 
@@ -263,7 +263,7 @@ build CMakeFiles/merge-bin | ${cmake_ninja_workdir}CMakeFiles/merge-bin: CUSTOM_
 # Custom command for CMakeFiles/monitor
 
 build CMakeFiles/monitor | ${cmake_ninja_workdir}CMakeFiles/monitor: CUSTOM_COMMAND || _project_elf_src bootloader.elf esp-idf/bootloader_support/libbootloader_support.a esp-idf/efuse/libefuse.a esp-idf/esp_bootloader_format/libesp_bootloader_format.a esp-idf/esp_common/libesp_common.a esp-idf/esp_hw_support/libesp_hw_support.a esp-idf/esp_rom/libesp_rom.a esp-idf/esp_system/libesp_system.a esp-idf/hal/libhal.a esp-idf/log/liblog.a esp-idf/main/libmain.a esp-idf/micro-ecc/libmicro-ecc.a esp-idf/soc/libsoc.a esp-idf/spi_flash/libspi_flash.a esp-idf/xtensa/libxtensa.a
-  COMMAND = cd /Users/silverlinings/esp/v5.5/esp-idf/components/esptool_py && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -D IDF_PATH=/Users/silverlinings/esp/v5.5/esp-idf -D "SERIAL_TOOL=/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python;-m;esp_idf_monitor" -D "SERIAL_TOOL_ARGS=--toolchain-prefix;xtensa-esp32s3-elf-;;--target;esp32s3;;--revision;0;;/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/bootloader.elf" -D WORKING_DIRECTORY=/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader -P run_serial_tool.cmake
+  COMMAND = /bin/sh CMakeFiles/monitor-210195c.sh 999eec697dac1bec
   pool = console
 
 
@@ -277,7 +277,7 @@ build CMakeFiles/_project_elf_src | ${cmake_ninja_workdir}CMakeFiles/_project_el
 # Custom command for project_elf_src_esp32s3.c
 
 build project_elf_src_esp32s3.c | ${cmake_ninja_workdir}project_elf_src_esp32s3.c: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -E touch /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/project_elf_src_esp32s3.c
+  COMMAND = /bin/sh CMakeFiles/project_elf_src_esp32s3.c-a80d682.sh c704a9ba0a22a896
   DESC = Generating project_elf_src_esp32s3.c
   restat = 1
 
@@ -286,7 +286,7 @@ build project_elf_src_esp32s3.c | ${cmake_ninja_workdir}project_elf_src_esp32s3.
 # Custom command for CMakeFiles/size
 
 build CMakeFiles/size | ${cmake_ninja_workdir}CMakeFiles/size: CUSTOM_COMMAND bootloader.map
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -D "IDF_SIZE_TOOL=/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python;-m;esp_idf_size" -D MAP_FILE=/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/bootloader.map -D OUTPUT_JSON= -P /Users/silverlinings/esp/v5.5/esp-idf/tools/cmake/run_size_tool.cmake
+  COMMAND = /bin/sh CMakeFiles/size-9d0ef72.sh 849eca1357cc2852
   pool = console
 
 
@@ -294,7 +294,7 @@ build CMakeFiles/size | ${cmake_ninja_workdir}CMakeFiles/size: CUSTOM_COMMAND bo
 # Custom command for CMakeFiles/size-files
 
 build CMakeFiles/size-files | ${cmake_ninja_workdir}CMakeFiles/size-files: CUSTOM_COMMAND bootloader.map
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -D "IDF_SIZE_TOOL=/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python;-m;esp_idf_size" -D IDF_SIZE_MODE=--files -D MAP_FILE=/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/bootloader.map -D OUTPUT_JSON= -P /Users/silverlinings/esp/v5.5/esp-idf/tools/cmake/run_size_tool.cmake
+  COMMAND = /bin/sh CMakeFiles/size-files-412dafd.sh 9753c0eb5b2d73bf
   pool = console
 
 
@@ -302,7 +302,7 @@ build CMakeFiles/size-files | ${cmake_ninja_workdir}CMakeFiles/size-files: CUSTO
 # Custom command for CMakeFiles/size-components
 
 build CMakeFiles/size-components | ${cmake_ninja_workdir}CMakeFiles/size-components: CUSTOM_COMMAND bootloader.map
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -D "IDF_SIZE_TOOL=/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python;-m;esp_idf_size" -D IDF_SIZE_MODE=--archives -D MAP_FILE=/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/bootloader.map -D OUTPUT_JSON= -P /Users/silverlinings/esp/v5.5/esp-idf/tools/cmake/run_size_tool.cmake
+  COMMAND = /bin/sh CMakeFiles/size-components-8b1aeab.sh c7fc5957f22709ae
   pool = console
 
 
@@ -310,7 +310,7 @@ build CMakeFiles/size-components | ${cmake_ninja_workdir}CMakeFiles/size-compone
 # Custom command for CMakeFiles/dfu
 
 build CMakeFiles/dfu | ${cmake_ninja_workdir}CMakeFiles/dfu: CUSTOM_COMMAND bootloader || _project_elf_src bootloader.elf esp-idf/bootloader_support/libbootloader_support.a esp-idf/efuse/libefuse.a esp-idf/esp_bootloader_format/libesp_bootloader_format.a esp-idf/esp_common/libesp_common.a esp-idf/esp_hw_support/libesp_hw_support.a esp-idf/esp_rom/libesp_rom.a esp-idf/esp_system/libesp_system.a esp-idf/hal/libhal.a esp-idf/log/liblog.a esp-idf/main/libmain.a esp-idf/micro-ecc/libmicro-ecc.a esp-idf/soc/libsoc.a esp-idf/spi_flash/libspi_flash.a esp-idf/xtensa/libxtensa.a gen_project_binary
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python /Users/silverlinings/esp/v5.5/esp-idf/tools/mkdfu.py write -o /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/dfu.bin --json /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/flasher_args.json --pid 9 --flash-size 2MB
+  COMMAND = /bin/sh CMakeFiles/dfu-4b714c5.sh f2cebf3af4e89e2a
   pool = console
 
 
@@ -318,7 +318,7 @@ build CMakeFiles/dfu | ${cmake_ninja_workdir}CMakeFiles/dfu: CUSTOM_COMMAND boot
 # Custom command for CMakeFiles/dfu-list
 
 build CMakeFiles/dfu-list | ${cmake_ninja_workdir}CMakeFiles/dfu-list: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -D ESP_DFU_LIST="1" -P /Users/silverlinings/esp/v5.5/esp-idf/tools/cmake/run_dfu_util.cmake
+  COMMAND = /bin/sh CMakeFiles/dfu-list-b870801.sh 83af37065853782d
   pool = console
 
 
@@ -326,7 +326,7 @@ build CMakeFiles/dfu-list | ${cmake_ninja_workdir}CMakeFiles/dfu-list: CUSTOM_CO
 # Custom command for CMakeFiles/dfu-flash
 
 build CMakeFiles/dfu-flash | ${cmake_ninja_workdir}CMakeFiles/dfu-flash: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -D ESP_DFU_BIN="/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/dfu.bin" -D ESP_DFU_PID="9" -P /Users/silverlinings/esp/v5.5/esp-idf/tools/cmake/run_dfu_util.cmake
+  COMMAND = /bin/sh CMakeFiles/dfu-flash-6f47d1e.sh 1eb42b19db2fe6cf
   pool = console
 
 
@@ -334,7 +334,7 @@ build CMakeFiles/dfu-flash | ${cmake_ninja_workdir}CMakeFiles/dfu-flash: CUSTOM_
 # Custom command for CMakeFiles/uf2
 
 build CMakeFiles/uf2 | ${cmake_ninja_workdir}CMakeFiles/uf2: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -D IDF_PATH=/Users/silverlinings/esp/v5.5/esp-idf -D "UF2_CMD=/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python;/Users/silverlinings/esp/v5.5/esp-idf/tools/mkuf2.py;write;--chip;esp32s3" -D "UF2_ARGS=--json;/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/flasher_args.json;-o;/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/uf2.bin" -P /Users/silverlinings/esp/v5.5/esp-idf/tools/cmake/run_uf2_cmds.cmake
+  COMMAND = /bin/sh CMakeFiles/uf2-5aa87a3.sh 7adf84b7218ecef4
   pool = console
 
 
@@ -342,7 +342,7 @@ build CMakeFiles/uf2 | ${cmake_ninja_workdir}CMakeFiles/uf2: CUSTOM_COMMAND
 # Custom command for CMakeFiles/uf2-app
 
 build CMakeFiles/uf2-app | ${cmake_ninja_workdir}CMakeFiles/uf2-app: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -D IDF_PATH=/Users/silverlinings/esp/v5.5/esp-idf -D "UF2_CMD=/Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python;/Users/silverlinings/esp/v5.5/esp-idf/tools/mkuf2.py;write;--chip;esp32s3" -D "UF2_ARGS=--json;/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/flasher_args.json;-o;/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/uf2-app.bin;--bin;app" -P /Users/silverlinings/esp/v5.5/esp-idf/tools/cmake/run_uf2_cmds.cmake
+  COMMAND = /bin/sh CMakeFiles/uf2-app-8eaa96f.sh 0a2beb91404c27f1
   pool = console
 
 # =============================================================================
@@ -355,7 +355,7 @@ build CMakeFiles/uf2-app | ${cmake_ninja_workdir}CMakeFiles/uf2-app: CUSTOM_COMM
 # Utility command for edit_cache
 
 build esp-idf/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/CMakeFiles/edit_cache.dir/utility.sh 6f988b0c9064c9ae
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -367,7 +367,7 @@ build esp-idf/edit_cache: phony esp-idf/CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build esp-idf/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/CMakeFiles/rebuild_cache.dir/utility.sh f75a2231e6df98b8
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -425,7 +425,7 @@ build esp-idf/xtensa/libxtensa.a: C_STATIC_LIBRARY_LINKER____idf_xtensa_ esp-idf
 # Utility command for edit_cache
 
 build esp-idf/xtensa/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/xtensa && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/xtensa/CMakeFiles/edit_cache.dir/utility.sh c7d620e6eeb2ac31
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -437,7 +437,7 @@ build esp-idf/xtensa/edit_cache: phony esp-idf/xtensa/CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build esp-idf/xtensa/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/xtensa && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/xtensa/CMakeFiles/rebuild_cache.dir/utility.sh 0f0c192f3f7a6d1d
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -454,7 +454,7 @@ build esp-idf/xtensa/rebuild_cache: phony esp-idf/xtensa/CMakeFiles/rebuild_cach
 # Utility command for edit_cache
 
 build esp-idf/newlib/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/newlib && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/newlib/CMakeFiles/edit_cache.dir/utility.sh 12c32d760766e63b
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -466,7 +466,7 @@ build esp-idf/newlib/edit_cache: phony esp-idf/newlib/CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build esp-idf/newlib/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/newlib && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/newlib/CMakeFiles/rebuild_cache.dir/utility.sh 116c1b1a31b68440
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -724,7 +724,7 @@ build esp-idf/soc/libsoc.a: C_STATIC_LIBRARY_LINKER____idf_soc_ esp-idf/soc/CMak
 # Utility command for edit_cache
 
 build esp-idf/soc/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/soc && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/soc/CMakeFiles/edit_cache.dir/utility.sh d6b795060bb4f7dc
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -736,7 +736,7 @@ build esp-idf/soc/edit_cache: phony esp-idf/soc/CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build esp-idf/soc/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/soc && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/soc/CMakeFiles/rebuild_cache.dir/utility.sh b432503233c34957
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -786,7 +786,7 @@ build esp-idf/micro-ecc/libmicro-ecc.a: C_STATIC_LIBRARY_LINKER____idf_micro-ecc
 # Utility command for edit_cache
 
 build esp-idf/micro-ecc/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/micro-ecc && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/micro-ecc/CMakeFiles/edit_cache.dir/utility.sh 448084bd5246bce6
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -798,7 +798,7 @@ build esp-idf/micro-ecc/edit_cache: phony esp-idf/micro-ecc/CMakeFiles/edit_cach
 # Utility command for rebuild_cache
 
 build esp-idf/micro-ecc/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/micro-ecc && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/micro-ecc/CMakeFiles/rebuild_cache.dir/utility.sh 61bfcbf2a3f5e50a
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -888,7 +888,7 @@ build esp-idf/hal/libhal.a: C_STATIC_LIBRARY_LINKER____idf_hal_ esp-idf/hal/CMak
 # Utility command for edit_cache
 
 build esp-idf/hal/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/hal && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/hal/CMakeFiles/edit_cache.dir/utility.sh ae4f1c7f8efb74e2
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -900,7 +900,7 @@ build esp-idf/hal/edit_cache: phony esp-idf/hal/CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build esp-idf/hal/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/hal && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/hal/CMakeFiles/rebuild_cache.dir/utility.sh 217d30883e6d38a0
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -950,7 +950,7 @@ build esp-idf/spi_flash/libspi_flash.a: C_STATIC_LIBRARY_LINKER____idf_spi_flash
 # Utility command for edit_cache
 
 build esp-idf/spi_flash/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/spi_flash && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/spi_flash/CMakeFiles/edit_cache.dir/utility.sh f513a36c4595a6fb
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -962,7 +962,7 @@ build esp-idf/spi_flash/edit_cache: phony esp-idf/spi_flash/CMakeFiles/edit_cach
 # Utility command for rebuild_cache
 
 build esp-idf/spi_flash/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/spi_flash && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/spi_flash/CMakeFiles/rebuild_cache.dir/utility.sh 5b280c4eb3898771
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -1012,7 +1012,7 @@ build esp-idf/esp_bootloader_format/libesp_bootloader_format.a: C_STATIC_LIBRARY
 # Utility command for edit_cache
 
 build esp-idf/esp_bootloader_format/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_bootloader_format && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_bootloader_format/CMakeFiles/edit_cache.dir/utility.sh 170b81c431b55c77
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -1024,7 +1024,7 @@ build esp-idf/esp_bootloader_format/edit_cache: phony esp-idf/esp_bootloader_for
 # Utility command for rebuild_cache
 
 build esp-idf/esp_bootloader_format/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_bootloader_format && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_bootloader_format/CMakeFiles/rebuild_cache.dir/utility.sh c8baa43bd7000c9d
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -1041,7 +1041,7 @@ build esp-idf/esp_bootloader_format/rebuild_cache: phony esp-idf/esp_bootloader_
 # Utility command for edit_cache
 
 build esp-idf/esp_app_format/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_app_format && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_app_format/CMakeFiles/edit_cache.dir/utility.sh a64c940db6cd217d
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -1053,7 +1053,7 @@ build esp-idf/esp_app_format/edit_cache: phony esp-idf/esp_app_format/CMakeFiles
 # Utility command for rebuild_cache
 
 build esp-idf/esp_app_format/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_app_format && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_app_format/CMakeFiles/rebuild_cache.dir/utility.sh 1130e2f235c31449
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -1279,7 +1279,7 @@ build esp-idf/bootloader_support/libbootloader_support.a: C_STATIC_LIBRARY_LINKE
 # Utility command for edit_cache
 
 build esp-idf/bootloader_support/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/bootloader_support && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/bootloader_support/CMakeFiles/edit_cache.dir/utility.sh 3dfc676493d06dc9
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -1291,7 +1291,7 @@ build esp-idf/bootloader_support/edit_cache: phony esp-idf/bootloader_support/CM
 # Utility command for rebuild_cache
 
 build esp-idf/bootloader_support/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/bootloader_support && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/bootloader_support/CMakeFiles/rebuild_cache.dir/utility.sh 02a7675168905588
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -1439,7 +1439,7 @@ build esp-idf/efuse/efuse_test_table: phony esp-idf/efuse/CMakeFiles/efuse_test_
 # Utility command for edit_cache
 
 build esp-idf/efuse/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/efuse && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/efuse/CMakeFiles/edit_cache.dir/utility.sh 68853db7a878b594
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -1451,7 +1451,7 @@ build esp-idf/efuse/edit_cache: phony esp-idf/efuse/CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build esp-idf/efuse/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/efuse && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/efuse/CMakeFiles/rebuild_cache.dir/utility.sh 861fa7da29c1e52a
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -1463,14 +1463,14 @@ build esp-idf/efuse/rebuild_cache: phony esp-idf/efuse/CMakeFiles/rebuild_cache.
 # Custom command for esp-idf/efuse/CMakeFiles/efuse-common-table
 
 build esp-idf/efuse/CMakeFiles/efuse-common-table | ${cmake_ninja_workdir}esp-idf/efuse/CMakeFiles/efuse-common-table: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/efuse && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python /Users/silverlinings/esp/v5.5/esp-idf/components/efuse/efuse_table_gen.py /Users/silverlinings/esp/v5.5/esp-idf/components/efuse/esp32s3/esp_efuse_table.csv -t esp32s3 --max_blk_len 256
+  COMMAND = /bin/sh esp-idf/efuse/CMakeFiles/efuse-common-table-94d574c.sh 209eb0e0996c7c19
 
 
 #############################################
 # Custom command for esp-idf/efuse/CMakeFiles/efuse_common_table
 
 build esp-idf/efuse/CMakeFiles/efuse_common_table | ${cmake_ninja_workdir}esp-idf/efuse/CMakeFiles/efuse_common_table: CUSTOM_COMMAND || esp-idf/efuse/efuse-common-table
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/efuse && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -E echo
+  COMMAND = /bin/sh esp-idf/efuse/CMakeFiles/efuse_common_table-ade5aa5.sh 3d5305393e73e5c1
   DESC = Warning: command "efuse_common_table" is deprecated. Have you wanted to run "efuse-common-table" instead?
 
 
@@ -1478,7 +1478,7 @@ build esp-idf/efuse/CMakeFiles/efuse_common_table | ${cmake_ninja_workdir}esp-id
 # Custom command for esp-idf/efuse/CMakeFiles/efuse_custom_table
 
 build esp-idf/efuse/CMakeFiles/efuse_custom_table | ${cmake_ninja_workdir}esp-idf/efuse/CMakeFiles/efuse_custom_table: CUSTOM_COMMAND || esp-idf/efuse/efuse-custom-table
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/efuse && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -E echo
+  COMMAND = /bin/sh esp-idf/efuse/CMakeFiles/efuse_custom_table-8cbd634.sh 3d5305393e73e5c1
   DESC = Warning: command "efuse_custom_table" is deprecated. Have you wanted to run "efuse-custom-table" instead?
 
 
@@ -1486,14 +1486,14 @@ build esp-idf/efuse/CMakeFiles/efuse_custom_table | ${cmake_ninja_workdir}esp-id
 # Custom command for esp-idf/efuse/CMakeFiles/show-efuse-table
 
 build esp-idf/efuse/CMakeFiles/show-efuse-table | ${cmake_ninja_workdir}esp-idf/efuse/CMakeFiles/show-efuse-table: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/efuse && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python /Users/silverlinings/esp/v5.5/esp-idf/components/efuse/efuse_table_gen.py /Users/silverlinings/esp/v5.5/esp-idf/components/efuse/esp32s3/esp_efuse_table.csv -t esp32s3 --max_blk_len 256 --info
+  COMMAND = /bin/sh esp-idf/efuse/CMakeFiles/show-efuse-table-ed764db.sh 5061581eb44754fc
 
 
 #############################################
 # Custom command for esp-idf/efuse/CMakeFiles/show_efuse_table
 
 build esp-idf/efuse/CMakeFiles/show_efuse_table | ${cmake_ninja_workdir}esp-idf/efuse/CMakeFiles/show_efuse_table: CUSTOM_COMMAND || esp-idf/efuse/show-efuse-table
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/efuse && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake -E echo
+  COMMAND = /bin/sh esp-idf/efuse/CMakeFiles/show_efuse_table-1284dbd.sh 3d5305393e73e5c1
   DESC = Warning: command "show_efuse_table" is deprecated. Have you wanted to run "show-efuse-table" instead?
 
 
@@ -1501,7 +1501,7 @@ build esp-idf/efuse/CMakeFiles/show_efuse_table | ${cmake_ninja_workdir}esp-idf/
 # Custom command for esp-idf/efuse/CMakeFiles/efuse_test_table
 
 build esp-idf/efuse/CMakeFiles/efuse_test_table | ${cmake_ninja_workdir}esp-idf/efuse/CMakeFiles/efuse_test_table: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/efuse && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python /Users/silverlinings/esp/v5.5/esp-idf/components/efuse/efuse_table_gen.py /Users/silverlinings/esp/v5.5/esp-idf/components/efuse/test/esp_efuse_test_table.csv -t esp32s3 --max_blk_len 256
+  COMMAND = /bin/sh esp-idf/efuse/CMakeFiles/efuse_test_table-6a2542f.sh e690b6a5c61a8d85
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
@@ -1513,7 +1513,7 @@ build esp-idf/efuse/CMakeFiles/efuse_test_table | ${cmake_ninja_workdir}esp-idf/
 # Utility command for edit_cache
 
 build esp-idf/esp_security/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_security && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_security/CMakeFiles/edit_cache.dir/utility.sh 475b64e6321385fd
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -1525,7 +1525,7 @@ build esp-idf/esp_security/edit_cache: phony esp-idf/esp_security/CMakeFiles/edi
 # Utility command for rebuild_cache
 
 build esp-idf/esp_security/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_security && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_security/CMakeFiles/rebuild_cache.dir/utility.sh 06ed331e1d4aaad8
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -1575,7 +1575,7 @@ build esp-idf/esp_system/libesp_system.a: C_STATIC_LIBRARY_LINKER____idf_esp_sys
 # Utility command for edit_cache
 
 build esp-idf/esp_system/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_system && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_system/CMakeFiles/edit_cache.dir/utility.sh 29cb5781dbe13dda
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -1587,7 +1587,7 @@ build esp-idf/esp_system/edit_cache: phony esp-idf/esp_system/CMakeFiles/edit_ca
 # Utility command for rebuild_cache
 
 build esp-idf/esp_system/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_system && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_system/CMakeFiles/rebuild_cache.dir/utility.sh debfefa7a12770bb
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -1709,7 +1709,7 @@ build esp-idf/esp_hw_support/libesp_hw_support.a: C_STATIC_LIBRARY_LINKER____idf
 # Utility command for edit_cache
 
 build esp-idf/esp_hw_support/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_hw_support && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_hw_support/CMakeFiles/edit_cache.dir/utility.sh a04224b5d340b6d4
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -1721,7 +1721,7 @@ build esp-idf/esp_hw_support/edit_cache: phony esp-idf/esp_hw_support/CMakeFiles
 # Utility command for rebuild_cache
 
 build esp-idf/esp_hw_support/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_hw_support && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_hw_support/CMakeFiles/rebuild_cache.dir/utility.sh f98fc4e275173156
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -1738,7 +1738,7 @@ build esp-idf/esp_hw_support/rebuild_cache: phony esp-idf/esp_hw_support/CMakeFi
 # Utility command for edit_cache
 
 build esp-idf/esp_hw_support/port/esp32s3/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_hw_support/port/esp32s3 && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_hw_support/port/esp32s3/CMakeFiles/edit_cache.dir/utility.sh baaa7a4b1d076b2f
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -1750,7 +1750,7 @@ build esp-idf/esp_hw_support/port/esp32s3/edit_cache: phony esp-idf/esp_hw_suppo
 # Utility command for rebuild_cache
 
 build esp-idf/esp_hw_support/port/esp32s3/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_hw_support/port/esp32s3 && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_hw_support/port/esp32s3/CMakeFiles/rebuild_cache.dir/utility.sh d482d5f3463438d0
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -1767,7 +1767,7 @@ build esp-idf/esp_hw_support/port/esp32s3/rebuild_cache: phony esp-idf/esp_hw_su
 # Utility command for edit_cache
 
 build esp-idf/esp_hw_support/mspi_timing_tuning/port/esp32s3/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_hw_support/mspi_timing_tuning/port/esp32s3 && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_hw_support/mspi_timing_tuning/port/esp32s3/CMakeFiles/edit_cache.dir/utility.sh f701fa50423dc7cb
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -1779,7 +1779,7 @@ build esp-idf/esp_hw_support/mspi_timing_tuning/port/esp32s3/edit_cache: phony e
 # Utility command for rebuild_cache
 
 build esp-idf/esp_hw_support/mspi_timing_tuning/port/esp32s3/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_hw_support/mspi_timing_tuning/port/esp32s3 && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_hw_support/mspi_timing_tuning/port/esp32s3/CMakeFiles/rebuild_cache.dir/utility.sh d2a006328d3b37dd
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -1796,7 +1796,7 @@ build esp-idf/esp_hw_support/mspi_timing_tuning/port/esp32s3/rebuild_cache: phon
 # Utility command for edit_cache
 
 build esp-idf/esp_hw_support/lowpower/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_hw_support/lowpower && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_hw_support/lowpower/CMakeFiles/edit_cache.dir/utility.sh 90baeea2b10a77cc
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -1808,7 +1808,7 @@ build esp-idf/esp_hw_support/lowpower/edit_cache: phony esp-idf/esp_hw_support/l
 # Utility command for rebuild_cache
 
 build esp-idf/esp_hw_support/lowpower/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_hw_support/lowpower && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_hw_support/lowpower/CMakeFiles/rebuild_cache.dir/utility.sh 05f96081c424bd76
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -1858,7 +1858,7 @@ build esp-idf/esp_common/libesp_common.a: C_STATIC_LIBRARY_LINKER____idf_esp_com
 # Utility command for edit_cache
 
 build esp-idf/esp_common/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_common && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_common/CMakeFiles/edit_cache.dir/utility.sh f29ba8b37bf1437a
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -1870,7 +1870,7 @@ build esp-idf/esp_common/edit_cache: phony esp-idf/esp_common/CMakeFiles/edit_ca
 # Utility command for rebuild_cache
 
 build esp-idf/esp_common/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_common && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_common/CMakeFiles/rebuild_cache.dir/utility.sh a2ccd1b2f2d614e5
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -2008,7 +2008,7 @@ build esp-idf/esp_rom/libesp_rom.a: C_STATIC_LIBRARY_LINKER____idf_esp_rom_ esp-
 # Utility command for edit_cache
 
 build esp-idf/esp_rom/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_rom && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_rom/CMakeFiles/edit_cache.dir/utility.sh ec5b00baba28a123
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -2020,7 +2020,7 @@ build esp-idf/esp_rom/edit_cache: phony esp-idf/esp_rom/CMakeFiles/edit_cache.ut
 # Utility command for rebuild_cache
 
 build esp-idf/esp_rom/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esp_rom && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esp_rom/CMakeFiles/rebuild_cache.dir/utility.sh 54a4e1c0703adafb
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -2134,7 +2134,7 @@ build esp-idf/log/liblog.a: C_STATIC_LIBRARY_LINKER____idf_log_ esp-idf/log/CMak
 # Utility command for edit_cache
 
 build esp-idf/log/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/log && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/log/CMakeFiles/edit_cache.dir/utility.sh 2da830742cf7205b
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -2146,7 +2146,7 @@ build esp-idf/log/edit_cache: phony esp-idf/log/CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build esp-idf/log/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/log && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/log/CMakeFiles/rebuild_cache.dir/utility.sh 0399ae0fa3e76cb3
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -2169,7 +2169,7 @@ build esp-idf/esptool_py/bootloader_check_size: phony esp-idf/esptool_py/CMakeFi
 # Utility command for edit_cache
 
 build esp-idf/esptool_py/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esptool_py && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esptool_py/CMakeFiles/edit_cache.dir/utility.sh d8bcf9ec57b7706d
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -2181,7 +2181,7 @@ build esp-idf/esptool_py/edit_cache: phony esp-idf/esptool_py/CMakeFiles/edit_ca
 # Utility command for rebuild_cache
 
 build esp-idf/esptool_py/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esptool_py && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/esptool_py/CMakeFiles/rebuild_cache.dir/utility.sh 4d92c7cedde0c5b9
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -2193,7 +2193,7 @@ build esp-idf/esptool_py/rebuild_cache: phony esp-idf/esptool_py/CMakeFiles/rebu
 # Custom command for esp-idf/esptool_py/CMakeFiles/bootloader_check_size
 
 build esp-idf/esptool_py/CMakeFiles/bootloader_check_size | ${cmake_ninja_workdir}esp-idf/esptool_py/CMakeFiles/bootloader_check_size: CUSTOM_COMMAND || _project_elf_src bootloader.elf esp-idf/bootloader_support/libbootloader_support.a esp-idf/efuse/libefuse.a esp-idf/esp_bootloader_format/libesp_bootloader_format.a esp-idf/esp_common/libesp_common.a esp-idf/esp_hw_support/libesp_hw_support.a esp-idf/esp_rom/libesp_rom.a esp-idf/esp_system/libesp_system.a esp-idf/hal/libhal.a esp-idf/log/liblog.a esp-idf/main/libmain.a esp-idf/micro-ecc/libmicro-ecc.a esp-idf/soc/libsoc.a esp-idf/spi_flash/libspi_flash.a esp-idf/xtensa/libxtensa.a gen_project_binary
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/esptool_py && /Users/silverlinings/.espressif/python_env/idf5.5_py3.12_env/bin/python /Users/silverlinings/esp/v5.5/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/bootloader.bin
+  COMMAND = /bin/sh esp-idf/esptool_py/CMakeFiles/bootloader_check_size-58d3a26.sh 45caaf4c5b7b0aa8
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
@@ -2205,7 +2205,7 @@ build esp-idf/esptool_py/CMakeFiles/bootloader_check_size | ${cmake_ninja_workdi
 # Utility command for edit_cache
 
 build esp-idf/partition_table/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/partition_table && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/partition_table/CMakeFiles/edit_cache.dir/utility.sh 6f72905d7c3ebbb7
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -2217,7 +2217,7 @@ build esp-idf/partition_table/edit_cache: phony esp-idf/partition_table/CMakeFil
 # Utility command for rebuild_cache
 
 build esp-idf/partition_table/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/partition_table && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/partition_table/CMakeFiles/rebuild_cache.dir/utility.sh 38a4e24859d5c2a3
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -2234,7 +2234,7 @@ build esp-idf/partition_table/rebuild_cache: phony esp-idf/partition_table/CMake
 # Utility command for edit_cache
 
 build esp-idf/bootloader/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/bootloader/CMakeFiles/edit_cache.dir/utility.sh 2fb8dce5288edef2
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -2246,7 +2246,7 @@ build esp-idf/bootloader/edit_cache: phony esp-idf/bootloader/CMakeFiles/edit_ca
 # Utility command for rebuild_cache
 
 build esp-idf/bootloader/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/bootloader && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/bootloader/CMakeFiles/rebuild_cache.dir/utility.sh 41db7382efff4a4d
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -2263,7 +2263,7 @@ build esp-idf/bootloader/rebuild_cache: phony esp-idf/bootloader/CMakeFiles/rebu
 # Utility command for edit_cache
 
 build esp-idf/freertos/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/freertos && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/freertos/CMakeFiles/edit_cache.dir/utility.sh 7aa64003f79e3881
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -2275,7 +2275,7 @@ build esp-idf/freertos/edit_cache: phony esp-idf/freertos/CMakeFiles/edit_cache.
 # Utility command for rebuild_cache
 
 build esp-idf/freertos/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/freertos && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/freertos/CMakeFiles/rebuild_cache.dir/utility.sh 03be3e4599dfaee8
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -2325,7 +2325,7 @@ build esp-idf/main/libmain.a: C_STATIC_LIBRARY_LINKER____idf_main_ esp-idf/main/
 # Utility command for edit_cache
 
 build esp-idf/main/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/main && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/ccmake -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/main/CMakeFiles/edit_cache.dir/utility.sh 373ea027c8739249
   DESC = Running CMake cache editor...
   pool = console
   restat = 1
@@ -2337,7 +2337,7 @@ build esp-idf/main/edit_cache: phony esp-idf/main/CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build esp-idf/main/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader/esp-idf/main && /Users/silverlinings/.espressif/tools/cmake/3.30.2/CMake.app/Contents/bin/cmake --regenerate-during-build -S/Users/silverlinings/esp/v5.5/esp-idf/components/bootloader/subproject -B/Users/silverlinings/Desktop/Coding/MatrixFluid/build/bootloader
+  COMMAND = /bin/sh esp-idf/main/CMakeFiles/rebuild_cache.dir/utility.sh dd5de3bb7fb0d0cb
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1

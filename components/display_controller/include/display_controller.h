@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "fluid_sensors.h"
+#include "led_matrix.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +49,7 @@ typedef enum {
     TRIGGER_SOURCE_PERIODIC,        ///< Automatic periodic timer
     TRIGGER_SOURCE_FLUID_CHANGE,    ///< Fluid level change detected
     TRIGGER_SOURCE_STARTUP,         ///< System startup
+    TRIGGER_SOURCE_SYSTEM,          ///< System-triggered message (e.g. Wi-Fi banner)
     TRIGGER_SOURCE_DEMO             ///< Demo mode
 } trigger_source_t;
 
@@ -171,6 +173,18 @@ fluid_level_t display_controller_get_current_level(void);
  * @return esp_err_t ESP_OK on success
  */
 esp_err_t display_controller_force_off(void);
+
+/**
+ * @brief Show an arbitrary message on the display.
+ *
+ * @param text Null-terminated text to display (converted to uppercase)
+ * @param color Text color
+ * @param duration_ms How long to display message (0 to use configured duration)
+ * @return esp_err_t ESP_OK on success
+ */
+esp_err_t display_controller_show_message(const char *text,
+                                          led_color_t color,
+                                          uint32_t duration_ms);
 
 /**
  * @brief Set brightness

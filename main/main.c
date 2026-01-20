@@ -64,6 +64,7 @@ static struct {
     fluid_level_t current_fluid_level;
     fluid_level_t previous_fluid_level;
     uint32_t startup_time_ms;
+    bool ip_banner_shown;
     bool wifi_enabled;
     bool demo_mode_enabled;
     uint32_t last_demo_check;
@@ -335,6 +336,17 @@ static void system_monitor_task(void *pvParameters) {
                      sta_status.ip[0] ? sta_status.ip : "--",
                      sta_status.last_error[0] ? " Error=" : "",
                      sta_status.last_error[0] ? sta_status.last_error : "");
+            if (sta_status.connected) {
+                if (!g_system.ip_banner_shown && sta_status.ip[0]) {
+                    char banner[32];
+                    snprintf(banner, sizeof(banner), "IP %s", sta_status.ip);
+                    if (display_controller_show_message(banner, LED_COLOR_GREEN, 20000) == ESP_OK) {
+                        g_system.ip_banner_shown = true;
+                    }
+                }
+            } else {
+                g_system.ip_banner_shown = false;
+            }
         }
 
         publish_portal_status_snapshot();
